@@ -34,6 +34,16 @@ To enable the UI tools, add this to your `mcp_config.json`:
 }
 ```
 
+### Conductor & Parallel Development
+This project is designed to support parallel development with **Conductor**.
+
+*   **Worktrees**: Conductor runs agents in isolated Git Worktrees.
+*   **Protocol**:
+    *   **Antigravity** runs in the primary workspace.
+    *   **DO NOT** check out the same branch in both places simultaneously.
+    *   Always use feature branches (`antigravity/feat-xyz` vs `conductor/feat-abc`).
+    *   Merge via Pull Requests to `main`.
+
 ## Available Command Agents
 
 Use these slash commands in Antigravity to activate specific BMad roles:
