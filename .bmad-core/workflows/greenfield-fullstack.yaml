@@ -113,6 +113,7 @@ workflow:
       requires: story.md
       notes: |
         Dev Agent (New Chat): @dev
+        - CRITICAL: Create feature branch `antigravity/<story-slug>` BEFORE coding.
         - Implements approved story
         - Updates File List with all changes
         - Marks story as "Review" when complete
