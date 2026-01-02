@@ -1,6 +1,6 @@
-# Antigravity BMad Config Template
+# Siberia Proxy with Antigravity Account Manager
 
-This repository serves as a **configuration basement** (template) for using the [BMad Method](https://github.com/bmadcode/bmad-method) within the Antigravity AI agent environment.
+This project is the Siberia Proxy with Antigravity Account Manager, built using the [BMad Method](https://github.com/bmadcode/bmad-method) within the Antigravity AI agent environment.
 
 It comes pre-configured with agent definitions, tasks, and transposed workflows that allow Antigravity to fully leverage the BMad agile development process through native slash commands.
 
@@ -10,6 +10,29 @@ It comes pre-configured with agent definitions, tasks, and transposed workflows 
 *   **Transposed Workflows**: Automatically generated workflows in `.agent/workflows` that bridge Antigravity and BMad.
 *   **Short Aliases**: Native support for short slash commands (e.g., `/po`, `/dev`).
 *   **Smart Handoffs**: Agents are context-aware and suggest the next logical workflow step upon task completion.
+
+## Project Standards
+
+### Frontend Stack
+*   **Library**: [Creative Tim UI](https://github.com/creativetimofficial/ui) (shadcn/ui compatible).
+*   **Integration**: Uses **Shadcn MCP Server** for component management.
+
+### MCP Configuration
+To enable the UI tools, add this to your `mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "shadcn-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@heilgar/shadcn-ui-mcp-server"
+      ]
+    }
+  }
+}
+```
 
 ## Available Command Agents
 
@@ -30,21 +53,14 @@ Use these slash commands in Antigravity to activate specific BMad roles:
 
 ## Quick Start
 
-1.  **Clone this repository** to start your new project:
-    ```bash
-    git clone https://github.com/salacoste/antigravity-bmad-config.git my-new-project
-    cd my-new-project
-    rm -rf .git # Remove the template's git history
-    git init    # Initialize your own repo
-    ```
-
-2.  **Start Planning**:
+1.  **Start Planning**:
     *   Run `/pm` to begin defining your project requirements.
     *   The agent will guide you through creating a `docs/prd.md`.
 
-3.  **Follow the Flow**:
+2.  **Follow the Flow**:
     *   Agents will read your config and artifacts automatically.
     *   Upon finishing a task, they will suggest the next command (e.g., `Now run /architect`).
+
 
 ## Maintenance
 
