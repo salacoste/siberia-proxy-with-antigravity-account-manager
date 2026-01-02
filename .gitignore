@@ -1,3 +1,6 @@
-# BMAD (local only) - Commented out for config repo tracking
-# .bmad-core/
-.bmad-*/
+builds/
+apps/backend/build/
+node_modules/
+.DS_Store
+.idea/
+.vscode/
