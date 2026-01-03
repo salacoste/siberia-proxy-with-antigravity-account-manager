@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Play, Loader2 } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -17,8 +18,8 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Plus } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { MoreHorizontal } from "lucide-react";
+import { AddAccountDialog } from "@/components/accounts/AddAccountDialog";
 
 // Define the interface manually since bindings aren't auto-generated in this env
 // In a real dev flow, we'd import { ListAccounts, DeleteAccount } from '../../wailsjs/go/main/App';
@@ -32,7 +33,26 @@ interface Account {
 
 export default function AccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const navigate = useNavigate();
+    const [activatingId, setActivatingId] = useState<number | null>(null);
+
+    const handleActivate = async (id: number) => {
+        if (activatingId) return;
+        setActivatingId(id);
+        try {
+            // @ts-ignore
+            if (window.go?.main?.App?.ActivateAccount) {
+                // @ts-ignore
+                await window.go.main.App.ActivateAccount(id);
+                console.log("Activation successful");
+            } else {
+                console.warn("Backend not available");
+            }
+        } catch (error) {
+            console.error("Failed to activate account:", error);
+        } finally {
+            setActivatingId(null);
+        }
+    };
 
     // Mock/Real data fetch
     const fetchAccounts = async () => {
@@ -74,9 +94,7 @@ export default function AccountsPage() {
                     <h1 className="text-3xl font-bold">Accounts</h1>
                     <p className="text-sm text-muted-foreground">Manage your Google accounts</p>
                 </div>
-                <Button onClick={() => navigate('/accounts/add')}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Account
-                </Button>
+                <AddAccountDialog onAccountAdded={fetchAccounts} />
             </div>
 
             <div className="border rounded-md">
@@ -113,6 +131,20 @@ export default function AccountsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleActivate(acc.id)}
+                                            disabled={!!activatingId}
+                                            className="mr-2"
+                                        >
+                                            {activatingId === acc.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                            ) : (
+                                                <Play className="h-4 w-4 text-green-600 hover:text-green-700" />
+                                            )}
+                                            <span className="sr-only">Activate</span>
+                                        </Button>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0">

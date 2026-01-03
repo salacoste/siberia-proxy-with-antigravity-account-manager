@@ -1,7 +1,9 @@
 # Story-11: Create Accounts Screen UI (List/Grid)
 
-**Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Draft
+**Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
+**Status:** Completed
+**Feature Branch:** `antigravity/feat/upstream-proxy`
+**Feature Branch:** `antigravity/feat/sqlite-layer`
 
 ## Goal
 Create the frontend interface to view and manage Google Accounts stored in the local SQLite database.

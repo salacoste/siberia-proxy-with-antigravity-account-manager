@@ -48,6 +48,16 @@ func (a *App) DeleteAccount(id uint) error {
 	return a.accountService.DeleteAccount(id)
 }
 
+// CreateAccount creates a new account
+func (a *App) CreateAccount(email, password, recovery, proxyGroup string) error {
+	return a.accountService.CreateAccount(email, password, recovery, proxyGroup)
+}
+
+// ActivateAccount Orchestrates the switch to this account
+func (a *App) ActivateAccount(id uint) error {
+	return a.accountService.ActivateAccount(id)
+}
+
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {

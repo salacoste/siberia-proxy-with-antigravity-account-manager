@@ -64,10 +64,11 @@ type Account struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Email        string          `gorm:"uniqueIndex" json:"email"`
-	Password     EncryptedString `json:"-"` // Never expose via JSON
-	SessionToken EncryptedString `json:"-"` // Never expose via JSON
-	ProxyGroup   string          `gorm:"default:default" json:"proxy_group"`
-	IsActive     bool            `gorm:"default:true" json:"is_active"`
-	Stats        string          `json:"stats"` // JSON string
+	Email         string          `gorm:"uniqueIndex" json:"email"`
+	Password      EncryptedString `json:"-"` // Never expose via JSON
+	RecoveryEmail string          `json:"recovery_email"`
+	SessionToken  EncryptedString `json:"-"` // Never expose via JSON
+	ProxyGroup    string          `gorm:"default:default" json:"proxy_group"`
+	IsActive      bool            `gorm:"default:true" json:"is_active"`
+	Stats         string          `json:"stats"` // JSON string
 }
