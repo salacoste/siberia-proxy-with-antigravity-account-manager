@@ -1,0 +1,9 @@
+story: story-30-regex-filter
+status: PASS
+date: 2026-01-04
+reviewer: qa-agent
+comments: |
+  Regex filtering working as expected.
+  Field filtering (method:*, status:*) verified.
+  Negation logic (!image) verified.
+risks: None

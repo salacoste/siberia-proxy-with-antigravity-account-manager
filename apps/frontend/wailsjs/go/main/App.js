@@ -45,3 +45,15 @@ export function ListAccounts() {
 export function UpdateAppConfig(arg1) {
   return window['go']['main']['App']['UpdateAppConfig'](arg1);
 }
+
+export function AddBreakpointRule(arg1, arg2) {
+  return window['go']['main']['App']['AddBreakpointRule'](arg1, arg2);
+}
+
+export function DeleteBreakpointRule(arg1) {
+  return window['go']['main']['App']['DeleteBreakpointRule'](arg1);
+}
+
+export function ResumeRequest(arg1, arg2) {
+  return window['go']['main']['App']['ResumeRequest'](arg1, arg2);
+}

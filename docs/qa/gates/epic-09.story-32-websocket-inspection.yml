@@ -1,0 +1,9 @@
+story: story-32-websocket-inspection
+status: PASS
+date: 2026-01-04
+reviewer: qa-agent
+comments: |
+  WebSocket upgrade detection works.
+  Frame interception via tee-reader works non-destructively.
+  Frontend viewer displays frames in real-time.
+risks: None

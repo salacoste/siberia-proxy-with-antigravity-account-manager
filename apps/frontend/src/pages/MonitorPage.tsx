@@ -1,11 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Pause, Play, Eye } from "lucide-react";
+import { Trash2, Pause, Play, Eye, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { WebSocketViewer } from "../components/monitor/WebSocketViewer";
+import { BreakpointPanel } from "../components/monitor/BreakpointPanel";
+import { PendingRequestDialog } from "../components/monitor/PendingRequestDialog";
+import { proxy } from "../../wailsjs/go/models";
 
 interface ProxyEvent {
     method: string;
@@ -25,6 +30,18 @@ export default function MonitorPage() {
     const [paused, setPaused] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<ProxyEvent | null>(null);
 
+    const [filterQuery, setFilterQuery] = useState("");
+
+    // Breakpoint State
+    const [showBreakpoints, setShowBreakpoints] = useState(false);
+    const [rules, setRules] = useState<proxy.BreakpointRule[]>([]);
+    const [pendingReq, setPendingReq] = useState<proxy.PendingRequest | null>(null);
+
+    // WebSocket State
+    const [showWs, setShowWs] = useState(false);
+    const [wsFrames, setWsFrames] = useState<proxy.WebSocketFrame[]>([]);
+
+
     const pausedRef = useRef(paused);
     useEffect(() => {
         pausedRef.current = paused;
@@ -43,8 +60,61 @@ export default function MonitorPage() {
                     return newEvents;
                 });
             });
+
+            // @ts-ignore
+            window.runtime.EventsOn("breakpoint:hit", (req: proxy.PendingRequest) => {
+                setPendingReq(req);
+            });
+
+            // @ts-ignore
+            window.runtime.EventsOn("proxy:ws:frame", (frame: proxy.WebSocketFrame) => {
+                setWsFrames(prev => [...prev, frame]);
+            });
         }
     }, []);
+
+    const filterEvent = (evt: ProxyEvent) => {
+        if (!filterQuery.trim()) return true;
+
+        try {
+            const terms = filterQuery.trim().split(/\s+/);
+            return terms.every(term => {
+                let checkTerm = term;
+                let isNegative = false;
+                if (checkTerm.startsWith('!') || (checkTerm.startsWith('-') && checkTerm.length > 1)) {
+                    isNegative = true;
+                    checkTerm = checkTerm.substring(1);
+                }
+
+                let match = false;
+                const lowerTerm = checkTerm.toLowerCase();
+
+                // Field filter?
+                if (checkTerm.includes(':')) {
+                    const [key, val] = checkTerm.split(':');
+                    const v = val.toLowerCase();
+                    if (key === 'method') match = evt.method.toLowerCase().includes(v);
+                    else if (key === 'status') match = evt.status.toString().startsWith(v);
+                    else if (key === 'url' || key === 'host') match = evt.url.toLowerCase().includes(v);
+                }
+                // Regex?
+                else if (checkTerm.startsWith('/') && checkTerm.endsWith('/') && checkTerm.length > 2) {
+                    try {
+                        const regex = new RegExp(checkTerm.slice(1, -1), 'i');
+                        match = regex.test(evt.url) || regex.test(evt.method);
+                    } catch { match = false; }
+                }
+                // Standard text
+                else {
+                    match = evt.url.toLowerCase().includes(lowerTerm) ||
+                        evt.method.toLowerCase().includes(lowerTerm) ||
+                        evt.status.toString().includes(lowerTerm);
+                }
+
+                return isNegative ? !match : match;
+            });
+        } catch { return true; }
+    };
 
     const getStatusColor = (status: number) => {
         if (status >= 200 && status < 300) return "bg-green-500/10 text-green-500 border-green-500/50";
@@ -64,6 +134,8 @@ export default function MonitorPage() {
         }
     }
 
+    const filteredEvents = events.filter(filterEvent);
+
     return (
         <div className="p-8 h-full flex flex-col space-y-6">
             <div className="flex items-center justify-between">
@@ -72,14 +144,43 @@ export default function MonitorPage() {
                     <p className="text-sm text-muted-foreground">Real-time HTTP request inspection</p>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant={showWs ? "secondary" : "outline"} size="sm" onClick={() => setShowWs(!showWs)}>
+                        <Bug className="mr-2 h-4 w-4" /> WebSockets ({wsFrames.length})
+                    </Button>
+                    <Button variant={showBreakpoints ? "secondary" : "outline"} size="sm" onClick={() => setShowBreakpoints(!showBreakpoints)}>
+                        <Bug className="mr-2 h-4 w-4" /> Breakpoints
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setPaused(!paused)}>
                         {paused ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
                         {paused ? "Resume" : "Pause"}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setEvents([])}>
+                    <Button variant="outline" size="sm" onClick={() => { setEvents([]); setWsFrames([]); }}>
                         <Trash2 className="mr-2 h-4 w-4" /> Clear
                     </Button>
                 </div>
+            </div>
+
+            {showWs && (
+                <div className="h-64 shrink-0">
+                    <WebSocketViewer frames={wsFrames} onClear={() => setWsFrames([])} />
+                </div>
+            )}
+
+            {showBreakpoints && (
+                <BreakpointPanel
+                    rules={rules}
+                    onAdd={(pattern) => setRules([...rules, new proxy.BreakpointRule({ id: Date.now().toString(), pattern, enabled: true, method: "*" })])}
+                    onDelete={(id) => setRules(rules.filter(r => r.id !== id))}
+                />
+            )}
+
+            <div className="flex gap-2">
+                <Input
+                    placeholder="Filter (e.g. method:POST /api/ status:404 !css)"
+                    value={filterQuery}
+                    onChange={(e) => setFilterQuery(e.target.value)}
+                    className="font-mono text-xs"
+                />
             </div>
 
             <div className="border rounded-md flex-1 overflow-auto bg-background/50 backdrop-blur relative">
@@ -96,14 +197,14 @@ export default function MonitorPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {events.length === 0 ? (
+                        {filteredEvents.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                                    No requests captured yet.
+                                    {events.length === 0 ? "No requests captured yet." : "No matching requests found."}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            events.map((evt, i) => (
+                            filteredEvents.map((evt, i) => (
                                 <TableRow key={i} className="font-mono text-xs hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setSelectedEvent(evt)}>
                                     <TableCell className="text-muted-foreground whitespace-nowrap">{evt.time}</TableCell>
                                     <TableCell>
@@ -137,6 +238,13 @@ export default function MonitorPage() {
                 </Table>
             </div>
 
+            {/* Pending Request Interception Dialog */}
+            <PendingRequestDialog
+                pendingReq={pendingReq}
+                onClose={() => setPendingReq(null)}
+            />
+
+            {/* Request Details Dialog */}
             <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
                 <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
                     <DialogHeader>

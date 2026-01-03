@@ -134,3 +134,20 @@ func (a *App) CheckForUpdates() updater.UpdateInfo {
 func (a *App) GetVersion() string {
 	return "v1.0.1"
 }
+
+// === Breakpoint API ===
+
+// AddBreakpointRule adds a rule to pause requests
+func (a *App) AddBreakpointRule(pattern, method string) proxy.BreakpointRule {
+	return a.proxyService.BreakpointManager.AddRule(pattern, method)
+}
+
+// DeleteBreakpointRule removes a rule
+func (a *App) DeleteBreakpointRule(id string) {
+	a.proxyService.BreakpointManager.DeleteRule(id)
+}
+
+// ResumeRequest resumes a paused request
+func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
+	return a.proxyService.BreakpointManager.ResumeRequest(id, mod)
+}

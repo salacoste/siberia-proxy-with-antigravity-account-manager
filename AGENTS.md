@@ -37,8 +37,9 @@ We work in parallel with **Conductor**, which uses Git Worktrees. To prevent con
 
 1.  **The "Main" Rule**: NEVER work directly on `main` or `develop`. These branches must remain clean synchronization points.
 2.  **Branching Strategy**:
-    - ALWAYS create a new feature branch for your task: `antigravity/<task-name>`.
-    - Conductor agents will use `conductor/<agent>/...`.
+    - **Epics**: MUST use `feat/epic-XX-<name>` (e.g. `feat/epic-09-inspection`). All stories for that epic merge into this branch.
+    - **Stories**: Create off the epic branch: `antigravity/epic-XX/story-YY-<name>` (e.g. `antigravity/epic-09/story-33-profiles`).
+    - **Conductor**: Uses `conductor/<agent>/...`.
 3.  **Worktree Awareness**:
     - **DO NOT** attempt to checkout a branch that Conductor is currently using.
     - If you need to verify Conductor's work, wait for the PR or for the agent to release the branch.
@@ -478,6 +479,7 @@ persona:
 core_principles:
   - CRITICAL: Story has ALL info you will need aside from what you loaded during the startup commands. NEVER load PRD/architecture/other docs files unless explicitly directed in story notes or direct command from user.
   - CRITICAL: ALWAYS check current folder structure before starting your story tasks, don't create new working directory if it already exists. Create new one when you're sure it's a brand new project.
+  - CRITICAL: BRANCH CHECK - Before starting work, ensure you are on the correct `feat/epic-XX` branch. If not, create it or checkout existing. Merge strictly upon validation.
   - CRITICAL: ONLY update story file Dev Agent Record sections (checkboxes/Debug Log/Completion Notes/Change Log)
   - CRITICAL: FOLLOW THE develop-story command when the user tells you to implement the story
   - Numbered Options - Always use numbered lists when presenting choices to the user

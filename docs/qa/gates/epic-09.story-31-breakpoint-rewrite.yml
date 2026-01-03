@@ -1,0 +1,10 @@
+story: story-31-breakpoint-rewrite
+status: PASS
+date: 2026-01-04
+reviewer: qa-agent
+comments: |
+  Breakpoint manager intercepts requests correctly.
+  PendingRequestDialog allows modification of headers/body.
+  Resume/Drop actions function correctly.
+risks:
+  - Potential race condition on high concurrency (monitor closely).
