@@ -99,6 +99,6 @@ func (a *App) UpdateAppConfig(newConfig config.AppConfig) error {
 }
 
 // GetAppVersion returns the current app version
-func (a *App) GetAppVersion() string {
-	return "v0.1.0" // TODO: Load from compilation time
+func (a *App) GetVersion() string {
+	return "v1.0.0"
 }
