@@ -23,3 +23,4 @@ export namespace config {
 
 }
 
+export * from './updater/models';

@@ -2,7 +2,10 @@ package process
 
 import (
 	"fmt"
-	"time"
+	"os/exec"
+	"strings"
+
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 // Manager handles external process control
@@ -16,26 +19,58 @@ type Service struct {
 }
 
 func NewService() *Service {
-	return &Service{DryRun: false} // Default to real mode (or dryrun if preferred)
+	return &Service{DryRun: false} // Default to real implementation
 }
 
 func (m *Service) Kill(name string) error {
-	fmt.Printf("[ProcessManager] Killing process: %s (DryRun=%v)\n", name, m.DryRun)
-	// Simulate work
-	time.Sleep(500 * time.Millisecond)
 	if m.DryRun {
+		fmt.Printf("[Process] [DRY RUN] Kill process matching: %s\n", name)
 		return nil
 	}
-	// TODO: Real implementation would use os/exec or syscall
+
+	procs, err := process.Processes()
+	if err != nil {
+		return fmt.Errorf("failed to list processes: %w", err)
+	}
+
+	killedCount := 0
+	for _, p := range procs {
+		pName, err := p.Name()
+		if err != nil {
+			continue // Skip processes we can't read
+		}
+
+		// Simple case-insensitive containment check
+		// e.g., "Code Helper" matches "Code Helper (GPU)"
+		if strings.Contains(strings.ToLower(pName), strings.ToLower(name)) {
+			fmt.Printf("[Process] Killing PID %d: %s\n", p.Pid, pName)
+			if err := p.Terminate(); err != nil {
+				// Try Kill (Force) if Terminate fails
+				_ = p.Kill()
+			}
+			killedCount++
+		}
+	}
+
+	if killedCount == 0 {
+		fmt.Printf("[Process] No process found matching: %s\n", name)
+	}
+
 	return nil
 }
 
 func (m *Service) Start(path string) error {
-	fmt.Printf("[ProcessManager] Starting process: %s (DryRun=%v)\n", path, m.DryRun)
-	time.Sleep(500 * time.Millisecond)
 	if m.DryRun {
+		fmt.Printf("[Process] [DRY RUN] Start process: %s\n", path)
 		return nil
 	}
-	// TODO: Real implementation
+
+	// Start detached process
+	cmd := exec.Command(path)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start process %s: %w", path, err)
+	}
+
+	fmt.Printf("[Process] Started %s (PID: %d)\n", path, cmd.Process.Pid)
 	return nil
 }

@@ -5,14 +5,20 @@ import { Button } from '@/components/ui/button';
 import { useConfigStore } from '@/stores/useConfigStore';
 import { toast } from "sonner";
 
+import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
+import { CheckForUpdates, GetVersion } from '../../wailsjs/go/main/App';
+
 export default function SettingsPage() {
     const { config, updateConfig } = useConfigStore();
     const [upstream, setUpstream] = useState('');
+    const [version, setVersion] = useState('Loading...');
+    const [checkingUpdate, setCheckingUpdate] = useState(false);
 
     useEffect(() => {
         if (config) {
             setUpstream(config.upstream_proxy || '');
         }
+        GetVersion().then(setVersion);
     }, [config]);
 
     // ... imports
@@ -22,6 +28,40 @@ export default function SettingsPage() {
             // @ts-ignore
             updateConfig({ ...config, upstream_proxy: upstream });
             toast.success("Settings saved");
+        }
+    };
+
+    const handleCheckUpdates = async () => {
+        setCheckingUpdate(true);
+        try {
+            const info = await CheckForUpdates();
+            if (info.available) {
+                toast.promise(
+                    new Promise((resolve) => {
+                        // We just show the toast, the button action is below
+                        resolve(true);
+                    }),
+                    {
+                        loading: 'Update found!',
+                        success: (
+                            <div className="flex flex-col gap-2">
+                                <span className="font-bold">Update {info.version} available!</span>
+                                <Button size="sm" onClick={() => BrowserOpenURL(info.download_url)}>
+                                    Download Update
+                                </Button>
+                            </div>
+                        ),
+                        error: 'Error'
+                    }
+                );
+            } else {
+                toast.success(`You are on the latest version (${info.version})`);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to check for updates");
+        } finally {
+            setCheckingUpdate(false);
         }
     };
 
@@ -125,6 +165,23 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* Application Info */}
+            <div className="p-4 border rounded-lg bg-card text-card-foreground space-y-4">
+                <div>
+                    <h2 className="font-semibold">Application Info</h2>
+                    <p className="text-sm text-muted-foreground">Version and Updates</p>
+                </div>
+                <div className="flex items-center justify-between">
+                    <div className="text-sm">
+                        <span className="text-muted-foreground">Current Version: </span>
+                        <span className="font-mono font-bold">{version}</span>
+                    </div>
+                    <Button onClick={handleCheckUpdates} disabled={checkingUpdate}>
+                        {checkingUpdate ? "Checking..." : "Check for Updates"}
+                    </Button>
+                </div>
             </div>
         </div>
     );
