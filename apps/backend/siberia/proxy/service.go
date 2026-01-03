@@ -13,6 +13,7 @@ import (
 
 	"github.com/elazarl/goproxy"
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -131,6 +132,19 @@ func (s *Service) emitEvent(r *http.Request, status int, start time.Time) {
 			Time:     start.Format("15:04:05"),
 		}
 		runtime.EventsEmit(s.ctx, "proxy:request", event)
+
+		// Persistent Logging
+		logger.LogAccess(logger.AccessEntry{
+			Time:       event.Time,
+			Timestamp:  start.Unix(),
+			Method:     r.Method,
+			URL:        r.URL.String(),
+			Status:     status,
+			DurationMs: duration,
+			ClientIP:   r.RemoteAddr,
+			UserAgent:  r.UserAgent(),
+			Size:       0, // We aren't capturing size yet in captureResponseWriter without more work
+		})
 	}
 }
 

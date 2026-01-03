@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,9 +11,6 @@ import (
 	"time"
 
 	"github.com/salacoste/siberia/siberia/config"
-)
-
-	"context"
 )
 
 func TestProxyService(t *testing.T) {

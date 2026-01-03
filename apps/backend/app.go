@@ -9,6 +9,8 @@ import (
 	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"github.com/salacoste/siberia/siberia/logger"
 )
 
 // App struct
@@ -27,6 +29,9 @@ func NewApp(cfg *config.Manager) *App {
 	if err != nil {
 		fmt.Printf("Fatal: Failed to init DB: %v\n", err)
 	}
+
+	// Initialize Logger
+	logger.InitAccessLogger(cfg.ConfigDir())
 
 	return &App{
 		config:         cfg,
