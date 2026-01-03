@@ -35,3 +35,7 @@ export function ResumeRequest(arg1: string, arg2: proxy.ModifiedRequest): Promis
 export function UpdateAppConfig(arg1: config.AppConfig): Promise<void>;
 
 export function UploadSession(arg1: proxy.ProxyRequestEvent): Promise<string>;
+
+export function SyncPush(arg1: string): Promise<void>;
+
+export function SyncPull(arg1: string): Promise<string>;

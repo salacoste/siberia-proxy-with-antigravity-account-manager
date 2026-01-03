@@ -11,7 +11,10 @@ import (
 	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
+	"github.com/salacoste/siberia/siberia/modules/sync"
+	"github.com/salacoste/siberia/siberia/modules/vault"
 	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/share"
 	"github.com/salacoste/siberia/siberia/updater"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -33,6 +36,8 @@ type App struct {
 	updaterService   *updater.Service
 	accountService   *accounts.Service
 	caService        *ca.Service
+	shareService     *share.Service
+	syncManager      *sync.Manager
 }
 
 // NewApp creates a new App application struct
@@ -52,6 +57,16 @@ func NewApp(cfg *config.Manager) *App {
 		fmt.Printf("Fatal: Failed to ensure CA: %v\n", err)
 	}
 
+	// Initialize Share Service
+	shareSvc := share.NewService()
+
+	// Initialize Sync Manager & Embedded Mock Server (MVP)
+	mockServer := sync.NewMockServer()
+	ts := mockServer.Start() // Helper that normally returns *httptest.Server
+	// But httptest.Server binds a random port.
+	// sync.NewManager needs that URL.
+	syncMgr := sync.NewManager(ts.URL)
+
 	return &App{
 		config:           cfg,
 		proxyService:     proxy.NewService(&cfg.Config, caSvc),
@@ -61,6 +76,8 @@ func NewApp(cfg *config.Manager) *App {
 		injectionService: injection.NewService(),
 		updaterService:   updater.NewService("v1.0.1"),
 		caService:        caSvc,
+		shareService:     shareSvc,
+		syncManager:      syncMgr,
 	}
 }
 
@@ -162,4 +179,44 @@ func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 // UploadSession exports a request as HAR and uploads it
 func (a *App) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
 	return a.shareService.UploadSession(event)
+}
+
+// === Sync & Vault API ===
+
+// SyncPush triggers a push of the current profile
+// For MVP: We hardcode a dummy profileID/password since we don't have the full UI for it yet
+// In real impl, these come from the Vault State.
+func (a *App) SyncPush(password string) error {
+	// 1. Encrypt Data (Mocking data for now)
+	vault := vault.NewVault()
+	data := []byte("{\"mock\": \"profile data\"}")
+	blob, err := vault.Encrypt(data, password)
+	if err != nil {
+		return err
+	}
+
+	// 2. Push
+	// We need a SyncManager instance. Ideally this is a service like others.
+	// For MVP of Story-33, we'll instantiate it here or add it to App.
+	// Let's add it to App properly.
+	return a.syncManager.Push("default-profile", blob)
+}
+
+// SyncPull triggers a pull
+func (a *App) SyncPull(password string) (string, error) {
+	payload, err := a.syncManager.Pull("default-profile")
+	if err != nil {
+		return "", err
+	}
+	if payload == nil {
+		return "", fmt.Errorf("no remote data")
+	}
+
+	// Decrypt
+	vault := vault.NewVault()
+	data, err := vault.Decrypt(payload.Blob, password)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

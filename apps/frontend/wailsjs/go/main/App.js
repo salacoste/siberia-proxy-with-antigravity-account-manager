@@ -61,3 +61,11 @@ export function ResumeRequest(arg1, arg2) {
 export function UploadSession(arg1) {
   return window['go']['main']['App']['UploadSession'](arg1);
 }
+
+export function SyncPush(arg1) {
+  return window['go']['main']['App']['SyncPush'](arg1);
+}
+
+export function SyncPull(arg1) {
+  return window['go']['main']['App']['SyncPull'](arg1);
+}

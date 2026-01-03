@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { SyncSettings } from "@/components/settings/SyncSettings";
 import { useConfigStore } from '@/stores/useConfigStore';
 import { toast } from "sonner";
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
@@ -75,9 +76,9 @@ export default function SettingsPage() {
                 );
             } else {
                 if (info.error) {
-                    toast.error(`Error checking updates: ${info.error}`);
+                    toast.error(`Error checking updates: ${info.error} `);
                 } else {
-                    toast.success(`You are on the latest version (${info.current_version})`);
+                    toast.success(`You are on the latest version(${info.current_version})`);
                 }
             }
         } catch (error) {
@@ -236,6 +237,9 @@ export default function SettingsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Cloud Sync */}
+            <SyncSettings />
 
             {/* Application Info */}
             <Card>
