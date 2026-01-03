@@ -1,7 +1,7 @@
 # Story-33: Design & Implement Cloud Profile Sync
 
 **Epic:** [Epic-10: Team Collaboration & Cloud Sync](./epic-10-collaboration.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Allow a user to login (e.g., via GitHub/Google) and sync their local `accounts.db` and `config.json` to the cloud.
