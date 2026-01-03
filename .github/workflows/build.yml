@@ -38,4 +38,4 @@ jobs:
 
     - name: Build
       working-directory: ./apps/backend
-      run: wails build
+      run: wails build -tags webkit2_41
