@@ -1,7 +1,7 @@
 # Story-13: Implement "Switch Account" External App Integration
 
 **Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Draft
+**Status:** Completed
 **Feature Branch:** `antigravity/feat/switch-account`
 
 ## Goal

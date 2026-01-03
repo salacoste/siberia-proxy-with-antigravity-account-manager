@@ -1,6 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Server, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Server, Settings, Activity } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 const NAV_ITEMS = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Accounts', path: '/accounts', icon: Users },
+    { name: 'Monitor', path: '/monitor', icon: Activity },
     { name: 'Proxy', path: '/proxy', icon: Server },
     { name: 'Settings', path: '/settings', icon: Settings },
 ];

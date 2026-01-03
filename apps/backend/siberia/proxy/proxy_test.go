@@ -12,6 +12,9 @@ import (
 	"github.com/salacoste/siberia/siberia/config"
 )
 
+	"context"
+)
+
 func TestProxyService(t *testing.T) {
 	// 1. Setup Config
 	cfg := &config.AppConfig{
@@ -24,7 +27,7 @@ func TestProxyService(t *testing.T) {
 
 	// 2. Start Proxy
 	svc := NewService(cfg)
-	if err := svc.Start(); err != nil {
+	if err := svc.Start(context.Background()); err != nil {
 		t.Fatalf("Failed to start proxy: %v", err)
 	}
 	defer svc.Stop(nil)

@@ -64,7 +64,7 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	// Start Proxy Service
-	if err := a.proxyService.Start(); err != nil {
+	if err := a.proxyService.Start(ctx); err != nil {
 		runtime.LogErrorf(a.ctx, "Failed to start proxy: %v", err)
 	}
 
