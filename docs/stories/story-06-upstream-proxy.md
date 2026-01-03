@@ -1,0 +1,26 @@
+# Story-06: Implement Upstream Proxy Chaining
+
+**Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
+**Status:** Draft
+
+## Goal
+Enable the local Siberia proxy to forward all outgoing traffic to a specified **Upstream Proxy** (e.g., a residential proxy provider or Tor), effectively chaining them: `Client -> Siberia -> Upstream -> Target`.
+
+## Tasks
+- [ ] **Task 1: Configuration**
+    -   Add `UpstreamProxy` (string) field to `AppConfig` (e.g., `http://user:pass@1.2.3.4:8000`).
+- [ ] **Task 2: Proxy Transport**
+    -   Modify `siberia/proxy/service.go` to configure the `Transtport` of `goproxy`.
+    -   Parse the upstream URL.
+    -   Set `proxy.Tr.Proxy` to `http.ProxyURL(upstreamUrl)`.
+- [ ] **Task 3: Settings UI**
+    -   Add an input field in `SettingsPage.tsx` to configure the upstream URL.
+
+## Acceptance Criteria
+- [ ] Setting a valid upstream URL in config causes traffic to route through it.
+- [ ] Clearing the upstream URL reverts to direct connection.
+- [ ] Supports authentication in URL (`user:pass`).
+
+## Technical Notes
+- **Library:** `goproxy` uses a custom `http.Transport` for outgoing requests (`proxy.Tr`). We simply need to set its `Proxy` function.
+- **Protocol Support:** Ensure `http` and `socks5` schemes are supported in the upstream URL.

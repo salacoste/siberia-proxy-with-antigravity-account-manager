@@ -6,9 +6,11 @@ import AccountsPage from './pages/AccountsPage';
 import ProxyPage from './pages/ProxyPage';
 import SettingsPage from './pages/SettingsPage';
 import { useConfigStore } from './stores/useConfigStore';
+import { useTheme } from './stores/useTheme';
 
 function App() {
-    // Initialize config on load
+    // Initialize config and theme
+    useTheme();
     React.useEffect(() => {
         useConfigStore.getState().fetchConfig();
     }, []);

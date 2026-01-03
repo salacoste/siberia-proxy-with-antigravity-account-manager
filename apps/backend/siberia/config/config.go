@@ -13,6 +13,17 @@ type AppConfig struct {
 	AutoRefresh     bool   `json:"auto_refresh"`
 	RefreshInterval int    `json:"refresh_interval"`
 	DbSync          bool   `json:"db_sync"`
+	ProxyPort       int    `json:"proxy_port"`
+	UpstreamProxy   string `json:"upstream_proxy"`
+
+	// z.ai Provider
+	ZaiEnabled bool   `json:"zai_enabled"`
+	ZaiBaseURL string `json:"zai_base_url"`
+	ZaiApiKey  string `json:"zai_api_key"`
+
+	// Security
+	AuthEnabled bool   `json:"auth_enabled"`
+	AuthToken   string `json:"auth_token"`
 }
 
 type Manager struct {
@@ -40,6 +51,13 @@ func NewManager() (*Manager, error) {
 			AutoRefresh:     true,
 			RefreshInterval: 15,
 			DbSync:          true,
+			ProxyPort:       3000,
+			UpstreamProxy:   "",
+			ZaiEnabled:      false,
+			ZaiBaseURL:      "https://api.z.ai/v1",
+			ZaiApiKey:       "",
+			AuthEnabled:     false,
+			AuthToken:       "",
 		},
 	}, nil
 }

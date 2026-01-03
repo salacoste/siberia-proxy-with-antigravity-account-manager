@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Server, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { Button } from '@/components/ui/button';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -32,15 +33,22 @@ export function Sidebar() {
                         to={item.path}
                         className={({ isActive }) =>
                             cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium",
-                                isActive
-                                    ? "bg-blue-600/10 text-blue-400"
-                                    : "hover:bg-slate-800 hover:text-white"
+                                "w-full", // wrapper for block width
                             )
                         }
                     >
-                        <item.icon size={20} />
-                        {item.name}
+                        {({ isActive }) => (
+                            <Button
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={cn(
+                                    "w-full justify-start gap-3",
+                                    isActive ? "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300" : "text-slate-400 hover:text-white hover:bg-slate-800"
+                                )}
+                            >
+                                <item.icon size={20} />
+                                {item.name}
+                            </Button>
+                        )}
                     </NavLink>
                 ))}
             </nav>

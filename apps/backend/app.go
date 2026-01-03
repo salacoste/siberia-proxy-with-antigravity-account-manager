@@ -5,18 +5,22 @@ import (
 	"fmt"
 
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx    context.Context
-	config *config.Manager
+	ctx          context.Context
+	config       *config.Manager
+	proxyService *proxy.Service
 }
 
 // NewApp creates a new App application struct
 func NewApp(cfg *config.Manager) *App {
 	return &App{
-		config: cfg,
+		config:       cfg,
+		proxyService: proxy.NewService(&cfg.Config),
 	}
 }
 
@@ -24,6 +28,20 @@ func NewApp(cfg *config.Manager) *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Start Proxy Service
+	if err := a.proxyService.Start(); err != nil {
+		runtime.LogErrorf(a.ctx, "Failed to start proxy: %v", err)
+	}
+
+	runtime.LogInfo(a.ctx, fmt.Sprintf("Proxy started on port %d", a.config.Config.ProxyPort))
+}
+
+// shutdown is called at application termination
+func (a *App) shutdown(ctx context.Context) {
+	if a.proxyService != nil {
+		a.proxyService.Stop(ctx)
+	}
 }
 
 // Greet returns a greeting for the given name
