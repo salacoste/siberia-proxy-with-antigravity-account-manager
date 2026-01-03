@@ -3,6 +3,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useConfigStore } from '@/stores/useConfigStore';
+import { toast } from "sonner";
 
 export default function SettingsPage() {
     const { config, updateConfig } = useConfigStore();
@@ -14,10 +15,13 @@ export default function SettingsPage() {
         }
     }, [config]);
 
+    // ... imports
+
     const handleSaveUpstream = () => {
         if (config) {
             // @ts-ignore
             updateConfig({ ...config, upstream_proxy: upstream });
+            toast.success("Settings saved");
         }
     };
 

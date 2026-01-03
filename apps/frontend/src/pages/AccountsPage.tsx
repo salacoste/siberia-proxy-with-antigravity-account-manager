@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Play, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
     Table,
     TableBody,
@@ -35,18 +36,38 @@ export default function AccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [activatingId, setActivatingId] = useState<number | null>(null);
 
+    // ... imports
+
     const handleActivate = async (id: number) => {
         if (activatingId) return;
         setActivatingId(id);
-        try {
-            // @ts-ignore
-            if (window.go?.main?.App?.ActivateAccount) {
+        const promise = new Promise(async (resolve, reject) => {
+            try {
                 // @ts-ignore
-                await window.go.main.App.ActivateAccount(id);
-                console.log("Activation successful");
-            } else {
-                console.warn("Backend not available");
+                if (window.go?.main?.App?.ActivateAccount) {
+                    // @ts-ignore
+                    await window.go.main.App.ActivateAccount(id);
+                    resolve("Account Activated");
+                } else {
+                    // Simulate delay for dev
+                    setTimeout(() => resolve("Backend disconnected (Dev)"), 1000);
+                }
+            } catch (e) {
+                reject(e);
             }
+        });
+
+        toast.promise(promise, {
+            loading: 'Switching account environment...',
+            success: (data) => `Success: ${data}`,
+            error: 'Failed to switch account',
+        });
+
+        try {
+            await promise;
+            // success handled by toast
+            // Update active state in UI list safely by re-fetching
+            fetchAccounts();
         } catch (error) {
             console.error("Failed to activate account:", error);
         } finally {
