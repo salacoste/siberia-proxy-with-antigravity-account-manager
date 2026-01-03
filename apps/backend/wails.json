@@ -8,8 +8,14 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "info": {
+    "productName": "Siberia",
+    "companyName": "Antigravity",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright 2026 Antigravity"
+  },
   "author": {
-    "name": "salacoste",
-    "email": "bad.vano23ru@gmail.com"
+    "name": "Antigravity",
+    "email": "support@antigravity.dev"
   }
 }

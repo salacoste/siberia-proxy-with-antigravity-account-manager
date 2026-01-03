@@ -167,6 +167,18 @@ func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Copy headers from original request
+	for k, vv := range r.Header {
+		for _, v := range vv {
+			req.Header.Add(k, v)
+		}
+	}
+
+	// Inject Auth if set
+	if s.config.ZaiApiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+s.config.ZaiApiKey)
+	}
+
 	// Execute
 	transport := &http.Transport{}
 	// Respect upstream proxy settings even for this internal client!
