@@ -100,5 +100,5 @@ func (a *App) UpdateAppConfig(newConfig config.AppConfig) error {
 
 // GetAppVersion returns the current app version
 func (a *App) GetVersion() string {
-	return "v1.0.0"
+	return "v1.0.1"
 }
