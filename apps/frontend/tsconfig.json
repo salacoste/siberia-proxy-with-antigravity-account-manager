@@ -29,7 +29,11 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "wailsjs/go/**/*.d.ts"
+  ],
+  "exclude": [
+    "wailsjs/go/**/*.js"
   ],
   "references": [
     {

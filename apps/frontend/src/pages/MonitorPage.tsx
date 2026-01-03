@@ -4,12 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trash2, Pause, Play, Eye, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { WebSocketViewer } from "../components/monitor/WebSocketViewer";
 import { BreakpointPanel } from "../components/monitor/BreakpointPanel";
 import { PendingRequestDialog } from "../components/monitor/PendingRequestDialog";
+import { RequestDetails } from "../components/monitor/RequestDetails";
 import { proxy } from "../../wailsjs/go/models";
 
 interface ProxyEvent {
@@ -245,63 +243,10 @@ export default function MonitorPage() {
             />
 
             {/* Request Details Dialog */}
-            <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-                <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle className="font-mono flex items-center gap-2">
-                            {selectedEvent?.method} {selectedEvent?.status}
-                        </DialogTitle>
-                        <DialogDescription className="truncate font-mono text-xs">
-                            {selectedEvent?.url}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedEvent && (
-                        <Tabs defaultValue="request" className="flex-1 flex flex-col overflow-hidden">
-                            <TabsList>
-                                <TabsTrigger value="request">Request</TabsTrigger>
-                                <TabsTrigger value="response">Response</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="request" className="flex-1 flex flex-col gap-4 overflow-hidden mt-4">
-                                <div className="grid grid-cols-2 gap-4 h-full">
-                                    <div className="border rounded bg-muted/50 p-2 flex flex-col">
-                                        <h4 className="text-xs font-semibold mb-2">Headers</h4>
-                                        <ScrollArea className="flex-1">
-                                            <pre className="text-[10px] whitespace-pre-wrap">
-                                                {selectedEvent.req_headers && Object.entries(selectedEvent.req_headers).map(([k, v]) => `${k}: ${v}\n`).join('')}
-                                            </pre>
-                                        </ScrollArea>
-                                    </div>
-                                    <div className="border rounded bg-muted/50 p-2 flex flex-col">
-                                        <h4 className="text-xs font-semibold mb-2">Body</h4>
-                                        <ScrollArea className="flex-1">
-                                            <pre className="text-[10px] whitespace-pre-wrap">{selectedEvent.req_body || "<Empty>"}</pre>
-                                        </ScrollArea>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="response" className="flex-1 flex flex-col gap-4 overflow-hidden mt-4">
-                                <div className="grid grid-cols-2 gap-4 h-full">
-                                    <div className="border rounded bg-muted/50 p-2 flex flex-col">
-                                        <h4 className="text-xs font-semibold mb-2">Headers</h4>
-                                        <ScrollArea className="flex-1">
-                                            <pre className="text-[10px] whitespace-pre-wrap">
-                                                {selectedEvent.resp_headers && Object.entries(selectedEvent.resp_headers).map(([k, v]) => `${k}: ${v}\n`).join('')}
-                                            </pre>
-                                        </ScrollArea>
-                                    </div>
-                                    <div className="border rounded bg-muted/50 p-2 flex flex-col">
-                                        <h4 className="text-xs font-semibold mb-2">Body</h4>
-                                        <ScrollArea className="flex-1">
-                                            <pre className="text-[10px] whitespace-pre-wrap">{selectedEvent.resp_body || "<Empty>"}</pre>
-                                        </ScrollArea>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    )}
-                </DialogContent>
-            </Dialog>
+            <RequestDetails
+                event={selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+            />
         </div>
     );
 }

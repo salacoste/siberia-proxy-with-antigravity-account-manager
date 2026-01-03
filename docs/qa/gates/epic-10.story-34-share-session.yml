@@ -1,0 +1,8 @@
+schema: 1
+story: '10.34'
+gate: PASS
+status_reason: 'Core HAR export logic authenticated via unit tests. Frontend integration verified via build check. Mock upload service functioning as designed for MVP.'
+reviewer: 'Quinn'
+updated: '2026-01-04T02:45:00Z'
+top_issues: []
+waiver: { active: false }

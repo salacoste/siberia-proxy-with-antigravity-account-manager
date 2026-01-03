@@ -19,3 +19,9 @@ Allow a user to login (e.g., via GitHub/Google) and sync their local `accounts.d
 - [ ] User can log in.
 - [ ] Adding an account on Device A appears on Device B.
 - [ ] Secrets (passwords) are strictly E2EE or managed via secure vault (Key Decision required).
+
+## PO Notes
+- **Status review**: Moved to "Ready for Dev" (Architect Approved).
+- **Blocker**: Resolved. See [Architecture: Cloud Sync & E2EE](../architecture/modules/cloud-sync.md).
+- **Action**: Dev to implement `crypto/vault` and `sync/manager`.
+

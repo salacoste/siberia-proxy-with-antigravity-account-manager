@@ -88,18 +88,16 @@ func HandleWebSocketTunnel(w http.ResponseWriter, r *http.Request, ctx context.C
 	// Because `r.Write` sends all headers, we just expect the 101 Switching Protocols back.
 
 	// Start Pipes
-	cID := uuid.New().String()
-
 	// Client -> Server
-	go pipeAndInspect(cID, clientConn, targetConn, "outgoing", ctx)
+	go pipeAndInspect(clientConn, targetConn, "outgoing", ctx)
 
 	// Server -> Client
 	// We pass clientBuf because hijacking might have buffered data?
 	// Actually for the first read validation we might stick to conn.
-	pipeAndInspect(cID, targetConn, clientConn, "incoming", ctx)
+	pipeAndInspect(targetConn, clientConn, "incoming", ctx)
 }
 
-func pipeAndInspect(id string, src io.Reader, dst io.Writer, direction string, ctx context.Context) {
+func pipeAndInspect(src io.Reader, dst io.Writer, direction string, ctx context.Context) {
 	// We use a TeeReader? No, we need to parse frames which is stateful.
 	// Best approach: Read into buffer, Parse, Write to dst.
 
@@ -171,11 +169,12 @@ func readFrame(r *bufio.Reader) ([]byte, int, bool, error) {
 	masked := (b1 & 0x80) != 0
 	payloadLen := int64(b1 & 0x7F)
 
-	if payloadLen == 126 {
+	switch payloadLen {
+	case 126:
 		var u16 uint16
 		binary.Read(r, binary.BigEndian, &u16)
 		payloadLen = int64(u16)
-	} else if payloadLen == 127 {
+	case 127:
 		binary.Read(r, binary.BigEndian, &payloadLen)
 	}
 

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,11 +24,11 @@ func TestProxyService(t *testing.T) {
 	cfg.ProxyPort = 19999
 
 	// 2. Start Proxy
-	svc := NewService(cfg)
-	if err := svc.Start(nil); err != nil {
+	svc := NewService(cfg, nil)
+	if err := svc.Start(context.TODO()); err != nil {
 		t.Fatalf("Failed to start proxy: %v", err)
 	}
-	defer svc.Stop(nil)
+	defer svc.Stop(context.TODO())
 
 	// Give it a moment to bind
 	time.Sleep(100 * time.Millisecond)

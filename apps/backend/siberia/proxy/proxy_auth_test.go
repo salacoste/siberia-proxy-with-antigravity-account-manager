@@ -14,7 +14,7 @@ func TestProxyAuth(t *testing.T) {
 		AuthToken:   "secret-token",
 		ZaiEnabled:  false,
 	}
-	svc := NewService(cfg)
+	svc := NewService(cfg, nil)
 
 	// 1. Test Without Header -> 401
 	req := httptest.NewRequest("GET", "http://example.com", nil)

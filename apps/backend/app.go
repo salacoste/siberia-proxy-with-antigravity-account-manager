@@ -16,6 +16,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// RegisterTypes is a dummy method to force Wails to generate bindings for these types
+// They are used in Events but not in other methods, so Wails v2 skips them otherwise.
+func (a *App) RegisterTypes() (proxy.PendingRequest, proxy.WebSocketFrame) {
+	return proxy.PendingRequest{}, proxy.WebSocketFrame{}
+}
+
 // App struct
 type App struct {
 	ctx              context.Context
@@ -150,4 +156,10 @@ func (a *App) DeleteBreakpointRule(id string) {
 // ResumeRequest resumes a paused request
 func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 	return a.proxyService.BreakpointManager.ResumeRequest(id, mod)
+}
+
+// UploadSession exports a request as HAR and uploads it
+// UploadSession exports a request as HAR and uploads it
+func (a *App) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
+	return a.shareService.UploadSession(event)
 }

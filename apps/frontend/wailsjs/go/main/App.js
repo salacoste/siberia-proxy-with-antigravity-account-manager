@@ -57,3 +57,7 @@ export function DeleteBreakpointRule(arg1) {
 export function ResumeRequest(arg1, arg2) {
   return window['go']['main']['App']['ResumeRequest'](arg1, arg2);
 }
+
+export function UploadSession(arg1) {
+  return window['go']['main']['App']['UploadSession'](arg1);
+}

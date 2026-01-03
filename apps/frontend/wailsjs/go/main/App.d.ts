@@ -33,3 +33,5 @@ export function DeleteBreakpointRule(arg1: string): Promise<void>;
 export function ResumeRequest(arg1: string, arg2: proxy.ModifiedRequest): Promise<boolean>;
 
 export function UpdateAppConfig(arg1: config.AppConfig): Promise<void>;
+
+export function UploadSession(arg1: proxy.ProxyRequestEvent): Promise<string>;
