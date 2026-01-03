@@ -11,15 +11,15 @@ type Manager interface {
 	Start(path string) error
 }
 
-type MockManager struct {
+type Service struct {
 	DryRun bool
 }
 
-func NewMockManager(dryRun bool) *MockManager {
-	return &MockManager{DryRun: dryRun}
+func NewService() *Service {
+	return &Service{DryRun: false} // Default to real mode (or dryrun if preferred)
 }
 
-func (m *MockManager) Kill(name string) error {
+func (m *Service) Kill(name string) error {
 	fmt.Printf("[ProcessManager] Killing process: %s (DryRun=%v)\n", name, m.DryRun)
 	// Simulate work
 	time.Sleep(500 * time.Millisecond)
@@ -30,7 +30,7 @@ func (m *MockManager) Kill(name string) error {
 	return nil
 }
 
-func (m *MockManager) Start(path string) error {
+func (m *Service) Start(path string) error {
 	fmt.Printf("[ProcessManager] Starting process: %s (DryRun=%v)\n", path, m.DryRun)
 	time.Sleep(500 * time.Millisecond)
 	if m.DryRun {

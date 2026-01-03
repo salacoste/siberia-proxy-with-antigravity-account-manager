@@ -7,19 +7,24 @@ import (
 	"github.com/salacoste/siberia/siberia/accounts"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
-	"github.com/salacoste/siberia/siberia/proxy"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
-
 	"github.com/salacoste/siberia/siberia/logger"
+	"github.com/salacoste/siberia/siberia/modules/injection"
+	"github.com/salacoste/siberia/siberia/modules/process"
+	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/updater"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx            context.Context
-	config         *config.Manager
-	proxyService   *proxy.Service
-	database       *db.Database
-	accountService *accounts.Service
+	ctx              context.Context
+	config           *config.Manager
+	proxyService     *proxy.Service
+	database         *db.Database
+	processService   *process.Service
+	injectionService *injection.Service
+	updaterService   *updater.Service
+	accountService   *accounts.Service
 }
 
 // NewApp creates a new App application struct
@@ -34,10 +39,13 @@ func NewApp(cfg *config.Manager) *App {
 	logger.InitAccessLogger(cfg.ConfigDir())
 
 	return &App{
-		config:         cfg,
-		proxyService:   proxy.NewService(&cfg.Config),
-		database:       database,
-		accountService: accounts.NewService(database),
+		config:           cfg,
+		proxyService:     proxy.NewService(&cfg.Config),
+		database:         database,
+		accountService:   accounts.NewService(database),
+		processService:   process.NewService(),
+		injectionService: injection.NewService(),
+		updaterService:   updater.NewService("v1.0.1"),
 	}
 }
 
@@ -96,6 +104,11 @@ func (a *App) GetAppConfig() config.AppConfig {
 // UpdateAppConfig updates the configuration and persists it
 func (a *App) UpdateAppConfig(newConfig config.AppConfig) error {
 	return a.config.Update(newConfig)
+}
+
+// CheckForUpdates checks if a new version is available
+func (a *App) CheckForUpdates() (*updater.UpdateInfo, error) {
+	return a.updaterService.CheckForUpdates()
 }
 
 // GetAppVersion returns the current app version

@@ -10,13 +10,13 @@ type Injector interface {
 	Inject(dbPath string, accessToken, refreshToken string, expiry time.Time) error
 }
 
-type MockInjector struct{}
+type Service struct{}
 
-func NewMockInjector() *MockInjector {
-	return &MockInjector{}
+func NewService() *Service {
+	return &Service{}
 }
 
-func (i *MockInjector) Inject(dbPath string, accessToken, refreshToken string, expiry time.Time) error {
+func (i *Service) Inject(dbPath string, accessToken, refreshToken string, expiry time.Time) error {
 	fmt.Printf("[Injector] Injecting into DB: %s\n", dbPath)
 	fmt.Printf("           Access: %s...\n", accessToken[:5]) // Log partial for visual verify
 	fmt.Printf("           Refresh: %s...\n", refreshToken[:5])

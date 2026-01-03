@@ -11,16 +11,18 @@ import (
 )
 
 type Service struct {
-	db       *gorm.DB
-	process  process.Manager
-	injector injection.Injector
+	db        *gorm.DB
+	process   *process.Service
+	injector  *injection.Service
+	configDir string
 }
 
 func NewService(database *db.Database) *Service {
 	return &Service{
-		db:       database.Conn,
-		process:  process.NewMockManager(true), // Dry-run by default
-		injector: injection.NewMockInjector(),
+		db:        database.Conn,
+		process:   process.NewService(),
+		injector:  injection.NewService(),
+		configDir: "", // Will be set if needed
 	}
 }
 

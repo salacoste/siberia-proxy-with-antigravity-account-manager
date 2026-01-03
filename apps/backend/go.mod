@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/elazarl/goproxy v1.7.2
 	github.com/glebarez/sqlite v1.11.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/wailsapp/wails/v2 v2.11.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/gorm v1.31.1
