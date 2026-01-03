@@ -1,4 +1,3 @@
-import * as React from "react"
 import { Moon, Sun, Laptop } from "lucide-react"
 import { useConfigStore } from "@/stores/useConfigStore"
 import { Button } from "@/components/ui/button"

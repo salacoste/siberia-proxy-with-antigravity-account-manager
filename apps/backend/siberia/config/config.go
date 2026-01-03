@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/salacoste/siberia/siberia/crypto"
 )
 
 type AppConfig struct {
@@ -24,6 +26,7 @@ type AppConfig struct {
 	// Security
 	AuthEnabled bool   `json:"auth_enabled"`
 	AuthToken   string `json:"auth_token"`
+	MasterKey   string `json:"master_key"` // 32-byte hex encoded key
 }
 
 type Manager struct {
@@ -43,7 +46,7 @@ func NewManager() (*Manager, error) {
 		return nil, err
 	}
 
-	return &Manager{
+	mgr := &Manager{
 		configPath: filepath.Join(appDir, "config.json"),
 		Config: AppConfig{
 			Theme:           "system",
@@ -58,8 +61,20 @@ func NewManager() (*Manager, error) {
 			ZaiApiKey:       "",
 			AuthEnabled:     false,
 			AuthToken:       "",
+			MasterKey:       "",
 		},
-	}, nil
+	}
+
+	// Ensure MasterKey exists immediately
+	if mgr.Config.MasterKey == "" {
+		key, err := crypto.GenerateKey()
+		if err != nil {
+			return nil, err
+		}
+		mgr.Config.MasterKey = key
+	}
+
+	return mgr, nil
 }
 
 func (m *Manager) Load() error {
@@ -74,7 +89,22 @@ func (m *Manager) Load() error {
 		return err
 	}
 
-	return json.Unmarshal(data, &m.Config)
+	if err := json.Unmarshal(data, &m.Config); err != nil {
+		return err
+	}
+
+	// Ensure MasterKey exists if loaded config didn't have it
+	if m.Config.MasterKey == "" {
+		key, err := crypto.GenerateKey()
+		if err != nil {
+			return err
+		}
+		m.Config.MasterKey = key
+		// Save immediately to persist the new key
+		return m.saveInternal()
+	}
+
+	return nil
 }
 
 func (m *Manager) Save() error {
@@ -109,4 +139,8 @@ func (m *Manager) Get() AppConfig {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.Config
+}
+
+func (m *Manager) ConfigDir() string {
+	return filepath.Dir(m.configPath)
 }

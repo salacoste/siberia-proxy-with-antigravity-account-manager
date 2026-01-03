@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Users, Server, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -31,7 +31,7 @@ export function Sidebar() {
                     <NavLink
                         key={item.path}
                         to={item.path}
-                        className={({ isActive }) =>
+                        className={({ isActive: _ }) =>
                             cn(
                                 "w-full", // wrapper for block width
                             )

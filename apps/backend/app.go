@@ -4,24 +4,48 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/salacoste/siberia/siberia/accounts"
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx          context.Context
-	config       *config.Manager
-	proxyService *proxy.Service
+	ctx            context.Context
+	config         *config.Manager
+	proxyService   *proxy.Service
+	database       *db.Database
+	accountService *accounts.Service
 }
 
 // NewApp creates a new App application struct
 func NewApp(cfg *config.Manager) *App {
-	return &App{
-		config:       cfg,
-		proxyService: proxy.NewService(&cfg.Config),
+	// Initialize DB
+	database, err := db.Init(cfg.ConfigDir(), cfg.Config.MasterKey)
+	if err != nil {
+		fmt.Printf("Fatal: Failed to init DB: %v\n", err)
 	}
+
+	return &App{
+		config:         cfg,
+		proxyService:   proxy.NewService(&cfg.Config),
+		database:       database,
+		accountService: accounts.NewService(database),
+	}
+}
+
+// ... existing methods ...
+
+// ListAccounts returns all accounts (safe DTOs)
+func (a *App) ListAccounts() ([]accounts.AccountDTO, error) {
+	return a.accountService.ListAccounts()
+}
+
+// DeleteAccount deletes an account by ID
+func (a *App) DeleteAccount(id uint) error {
+	return a.accountService.DeleteAccount(id)
 }
 
 // startup is called when the app starts. The context is saved
