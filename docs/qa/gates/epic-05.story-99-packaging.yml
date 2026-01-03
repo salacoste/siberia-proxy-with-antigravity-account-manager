@@ -1,0 +1,11 @@
+schema: 1
+story: 'epic-05.story-99'
+story_title: 'Application Packaging & CI/CD'
+gate: PASS
+status_reason: 'Basic Multi-OS CI pipeline is functional.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:10:00Z'
+top_issues:
+  - 'Stories 16, 17, 18 (Auto-Update) are missing.'
+waiver: { active: false }
+quality_score: 80

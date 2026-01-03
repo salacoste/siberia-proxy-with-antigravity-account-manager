@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/salacoste/siberia/siberia/accounts"
+	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/logger"
@@ -25,6 +26,7 @@ type App struct {
 	injectionService *injection.Service
 	updaterService   *updater.Service
 	accountService   *accounts.Service
+	caService        *ca.Service
 }
 
 // NewApp creates a new App application struct
@@ -38,14 +40,21 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize Logger
 	logger.InitAccessLogger(cfg.ConfigDir())
 
+	// Initialize CA Service
+	caSvc := ca.NewService(&cfg.Config)
+	if err := caSvc.EnsureCA(); err != nil {
+		fmt.Printf("Fatal: Failed to ensure CA: %v\n", err)
+	}
+
 	return &App{
 		config:           cfg,
-		proxyService:     proxy.NewService(&cfg.Config),
+		proxyService:     proxy.NewService(&cfg.Config, caSvc),
 		database:         database,
 		accountService:   accounts.NewService(database),
 		processService:   process.NewService(),
 		injectionService: injection.NewService(),
 		updaterService:   updater.NewService("v1.0.1"),
+		caService:        caSvc,
 	}
 }
 
@@ -106,8 +115,18 @@ func (a *App) UpdateAppConfig(newConfig config.AppConfig) error {
 	return a.config.Update(newConfig)
 }
 
-// CheckForUpdates checks if a new version is available
-func (a *App) CheckForUpdates() (*updater.UpdateInfo, error) {
+// CheckForUpdates checks if a new version is available// InstallCert installs the root CA into the OS trust store
+func (a *App) InstallCert() error {
+	return a.caService.InstallCert()
+}
+
+// CheckCertTrust checks if the root CA is trusted
+func (a *App) CheckCertTrust() bool {
+	return a.caService.CheckTrust()
+}
+
+// CheckForUpdates checks for updates
+func (a *App) CheckForUpdates() updater.UpdateInfo {
 	return a.updaterService.CheckForUpdates()
 }
 

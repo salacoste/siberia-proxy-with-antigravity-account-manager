@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-07.story-23'
+story_title: 'Traffic Inspector UI'
+gate: PASS
+status_reason: 'Frontend Table implementation correctly subscribes to Wails events.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:30:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

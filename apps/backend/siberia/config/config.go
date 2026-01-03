@@ -10,6 +10,7 @@ import (
 )
 
 type AppConfig struct {
+	AppDataDir      string `json:"-"` // Added for internal use
 	Theme           string `json:"theme"`
 	Language        string `json:"language"`
 	AutoRefresh     bool   `json:"auto_refresh"`
@@ -24,6 +25,7 @@ type AppConfig struct {
 	ZaiApiKey  string `json:"zai_api_key"`
 
 	// Security
+	MitmEnabled bool   `json:"mitm_enabled"`
 	AuthEnabled bool   `json:"auth_enabled"`
 	AuthToken   string `json:"auth_token"`
 	MasterKey   string `json:"master_key"` // 32-byte hex encoded key
@@ -62,6 +64,7 @@ func NewManager() (*Manager, error) {
 			AuthEnabled:     false,
 			AuthToken:       "",
 			MasterKey:       "",
+			AppDataDir:      appDir,
 		},
 	}
 

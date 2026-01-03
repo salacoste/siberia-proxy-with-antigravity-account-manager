@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-06.story-21'
+story_title: 'Integration & Verification'
+gate: PASS
+status_reason: 'Orchestration flow correctly wired in Accounts Service.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:20:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

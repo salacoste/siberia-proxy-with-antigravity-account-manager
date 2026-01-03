@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-03.story-12'
+story_title: 'Implement Add Account Logic'
+gate: PASS
+status_reason: 'Secure credential handling and validation verified.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T20:40:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

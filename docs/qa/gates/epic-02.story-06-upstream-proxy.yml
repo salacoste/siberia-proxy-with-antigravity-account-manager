@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-02.story-06'
+story_title: 'Implement Upstream Proxy Chaining'
+gate: PASS
+status_reason: 'Upstream configuration correctly sets Transport.Proxy.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T20:35:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

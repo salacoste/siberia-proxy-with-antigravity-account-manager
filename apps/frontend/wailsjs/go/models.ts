@@ -62,6 +62,7 @@ export namespace config {
 	    zai_enabled: boolean;
 	    zai_base_url: string;
 	    zai_api_key: string;
+	    mitm_enabled: boolean;
 	    auth_enabled: boolean;
 	    auth_token: string;
 	    master_key: string;
@@ -82,6 +83,7 @@ export namespace config {
 	        this.zai_enabled = source["zai_enabled"];
 	        this.zai_base_url = source["zai_base_url"];
 	        this.zai_api_key = source["zai_api_key"];
+	        this.mitm_enabled = source["mitm_enabled"];
 	        this.auth_enabled = source["auth_enabled"];
 	        this.auth_token = source["auth_token"];
 	        this.master_key = source["master_key"];
@@ -94,10 +96,11 @@ export namespace updater {
 	
 	export class UpdateInfo {
 	    available: boolean;
-	    version: string;
-	    release_url: string;
+	    current_version: string;
+	    latest_version: string;
 	    download_url: string;
-	    description: string;
+	    release_notes: string;
+	    error?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateInfo(source);
@@ -106,10 +109,11 @@ export namespace updater {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.available = source["available"];
-	        this.version = source["version"];
-	        this.release_url = source["release_url"];
+	        this.current_version = source["current_version"];
+	        this.latest_version = source["latest_version"];
 	        this.download_url = source["download_url"];
-	        this.description = source["description"];
+	        this.release_notes = source["release_notes"];
+	        this.error = source["error"];
 	    }
 	}
 

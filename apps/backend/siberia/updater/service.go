@@ -4,111 +4,83 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
-
-	"github.com/hashicorp/go-version"
 )
 
-const (
-	RepoOwner = "salacoste"
-	RepoName  = "siberia-proxy-with-antigravity-account-manager"
-)
-
+// UpdateInfo holds information about the latest available release
 type UpdateInfo struct {
-	Available   bool   `json:"available"`
-	Version     string `json:"version"`
-	ReleaseURL  string `json:"release_url"`
-	DownloadURL string `json:"download_url"`
-	Description string `json:"description"`
+	Available      bool   `json:"available"`
+	CurrentVersion string `json:"current_version"`
+	LatestVersion  string `json:"latest_version"`
+	DownloadURL    string `json:"download_url"`
+	ReleaseNotes   string `json:"release_notes"`
+	Error          string `json:"error,omitempty"`
 }
 
+// Service handles update checks
 type Service struct {
-	currentVersion string
+	CurrentVersion string
+	RepoOwner      string
+	RepoName       string
 }
 
+// NewService creates a new updater service
 func NewService(currentVersion string) *Service {
+	// Default to local repo for now
 	return &Service{
-		currentVersion: currentVersion,
+		CurrentVersion: currentVersion,
+		RepoOwner:      "salacoste",
+		RepoName:       "siberia",
 	}
 }
 
-type githubRelease struct {
+// GitHubRelease represents the minimal structure of the GitHub Release API response
+type GitHubRelease struct {
 	TagName string `json:"tag_name"`
-	HtmlURL string `json:"html_url"`
 	Body    string `json:"body"`
-	Assets  []struct {
-		Name               string `json:"name"`
-		BrowserDownloadURL string `json:"browser_download_url"`
-	} `json:"assets"`
+	HtmlUrl string `json:"html_url"`
 }
 
-func (s *Service) CheckForUpdates() (*UpdateInfo, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", RepoOwner, RepoName)
+// CheckForUpdates queries the GitHub API for the latest release
+func (s *Service) CheckForUpdates() UpdateInfo {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", s.RepoOwner, s.RepoName)
 
-	resp, err := client.Get(url)
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to check updates: %v", err)
+		return UpdateInfo{Error: "Failed to create request: " + err.Error()}
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return UpdateInfo{Error: "Network error: " + err.Error()}
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("github api returned status: %d", resp.StatusCode)
+		return UpdateInfo{Error: fmt.Sprintf("GitHub API returned status: %d", resp.StatusCode)}
 	}
 
-	var release githubRelease
+	var release GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+		return UpdateInfo{Error: "Failed to parse release info"}
 	}
 
-	// Compare Versions
-	vCurrent, err := version.NewVersion(s.currentVersion)
-	if err != nil {
-		return nil, fmt.Errorf("invalid current version: %v", err)
-	}
-	vRemote, err := version.NewVersion(release.TagName)
-	if err != nil {
-		return nil, fmt.Errorf("invalid remote version: %v", err)
-	}
+	latest := strings.TrimPrefix(release.TagName, "v")
+	current := strings.TrimPrefix(s.CurrentVersion, "v")
 
-	info := &UpdateInfo{
-		Available:   vRemote.GreaterThan(vCurrent),
-		Version:     release.TagName,
-		ReleaseURL:  release.HtmlURL,
-		Description: release.Body,
-	}
+	// Simple string comparison for MVP.
+	// In production, use "github.com/Masterminds/semver/v3"
+	// But since this is a desktop app, let's keep dependencies low if possible or just do simple check.
+	// Actually, just != check is enough to say "Update Available" if we assume strictly increasing tags.
+	updateAvailable := latest != current
 
-	// Find asset for current OS
-	os := runtime.GOOS
-	// Mapping: darwin -> macos, windows -> windows, linux -> linux
-	searchStr := ""
-	switch os {
-	case "darwin":
-		searchStr = "macos"
-	case "windows":
-		searchStr = "windows"
-	case "linux":
-		searchStr = "linux"
+	return UpdateInfo{
+		Available:      updateAvailable,
+		CurrentVersion: s.CurrentVersion,
+		LatestVersion:  release.TagName,
+		DownloadURL:    release.HtmlUrl, // Point to release page for manual download (MVP Safety)
+		ReleaseNotes:   release.Body,
 	}
-
-	for _, asset := range release.Assets {
-		// extremely simple matching logic
-		// if searchStr is in name
-		if searchStr != "" && len(asset.BrowserDownloadURL) > 0 {
-			// Check if filename contains our OS key
-			// Note: This is a bit naive but works for our naming convention "siberia-linux-..."
-			if strings.Contains(asset.Name, searchStr) {
-				info.DownloadURL = asset.BrowserDownloadURL
-				break
-			}
-		}
-	}
-	// Fallback if no asset match, use release URL
-	if info.DownloadURL == "" {
-		info.DownloadURL = release.HtmlURL
-	}
-
-	return info, nil
 }

@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-06.story-20'
+story_title: 'Implement SQLite Token Injection'
+gate: PASS
+status_reason: 'Injection logic includes safety backups and robust SQLite handling.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:20:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

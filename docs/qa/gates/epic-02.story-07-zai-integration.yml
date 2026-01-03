@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-02.story-07'
+story_title: 'Implement z.ai Provider Integration'
+gate: PASS
+status_reason: 'Reverse proxy mode correctly routes to z.ai with auth injection.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T20:35:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

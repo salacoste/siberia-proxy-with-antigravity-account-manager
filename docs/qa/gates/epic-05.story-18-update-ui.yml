@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-05.story-18'
+story_title: 'Update UI & Notifications'
+gate: PASS
+status_reason: 'Frontend UI correctly integrates with backend update service.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:40:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

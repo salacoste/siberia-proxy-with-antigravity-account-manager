@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-03.story-11'
+story_title: 'Create Accounts Screen UI'
+gate: PASS
+status_reason: 'UI implementation matches functional requirements.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T20:40:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

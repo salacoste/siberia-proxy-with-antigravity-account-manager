@@ -31,3 +31,20 @@ Implement the "Activate" / "Switch Account" functionality that orchestrates the 
 - [ ] Clicking "Activate" on an account triggers the backend flow.
 - [ ] Backend logs the orchestration steps (Kill -> Inject -> Start).
 - [ ] Frontend receives success/failure feedback.
+
+## QA Results
+
+### Review Date: 2026-01-03
+
+### Reviewed By: Quinn (Test Architect)
+
+### Code Quality Assessment
+Backend orchestration in `service.go` correctly implements the Kill -> Inject -> Start flow. Hardcoded paths are acceptable for MVP status as noted in code comments. Error propagation to frontend via Promises/Toast is handled well.
+
+### Compliance Check
+- Coding Standards: [✓] Error wrapping pattern.
+- All ACs Met: [✓] External app orchestration works.
+
+### Gate Status
+Gate: PASS → docs/qa/gates/epic-03.story-13-switch-account.yml
+

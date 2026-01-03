@@ -24,3 +24,20 @@ Enable the local Siberia proxy to forward all outgoing traffic to a specified **
 ## Technical Notes
 - **Library:** `goproxy` uses a custom `http.Transport` for outgoing requests (`proxy.Tr`). We simply need to set its `Proxy` function.
 - **Protocol Support:** Ensure `http` and `socks5` schemes are supported in the upstream URL.
+
+## QA Results
+
+### Review Date: 2026-01-03
+
+### Reviewed By: Quinn (Test Architect)
+
+### Code Quality Assessment
+Upstream proxy logic is correctly implemented by setting the `Transport.Proxy` function in `Start()`. This allows hot-reloading (via restart) and environment variable fallback.
+
+### Compliance Check
+- Coding Standards: [✓] Go standard library usage.
+- All ACs Met: [✓] Upstream chaining works.
+
+### Gate Status
+Gate: PASS → docs/qa/gates/epic-02.story-06-upstream-proxy.yml
+

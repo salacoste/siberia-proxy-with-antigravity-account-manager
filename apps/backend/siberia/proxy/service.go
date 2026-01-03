@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -8,38 +9,78 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
+	"sync"
 	"time"
 
 	"github.com/elazarl/goproxy"
+	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Service struct {
-	server *http.Server
-	proxy  *goproxy.ProxyHttpServer
-	config *config.AppConfig
-	ctx    context.Context
+	server      *http.Server
+	proxy       *goproxy.ProxyHttpServer
+	config      *config.AppConfig
+	caService   *ca.Service
+	ctx         context.Context
+	CaptureBody bool
+	mu          sync.RWMutex
 }
 
 type ProxyRequestEvent struct {
-	Method   string `json:"method"`
-	URL      string `json:"url"`
-	Status   int    `json:"status"`
-	Duration int64  `json:"duration_ms"` // milliseconds
-	Time     string `json:"time"`
+	Method      string            `json:"method"`
+	URL         string            `json:"url"`
+	Status      int               `json:"status"`
+	Duration    int64             `json:"duration_ms"` // milliseconds
+	Time        string            `json:"time"`
+	Size        int64             `json:"size"`
+	ReqHeaders  map[string]string `json:"req_headers"`
+	RespHeaders map[string]string `json:"resp_headers"`
+	ReqBody     string            `json:"req_body"`
+	RespBody    string            `json:"resp_body"`
 }
 
-func NewService(cfg *config.AppConfig) *Service {
+func NewService(cfg *config.AppConfig, caSvc *ca.Service) *Service {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = true
 
-	return &Service{
-		proxy:  proxy,
-		config: cfg,
+	svc := &Service{
+		proxy:       proxy,
+		config:      cfg,
+		caService:   caSvc,
+		CaptureBody: true,
 	}
+
+	// Configure MitM if enabled (or always configure it, but toggle in handler)
+	// We need to load the CA pair to sign certs.
+	if caSvc != nil {
+		caPair, err := caSvc.GetCAPair()
+		if err == nil {
+			proxy.OnRequest().HandleConnect(goproxy.FuncHttpsHandler(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+				// Toggle MitM based on config
+				if svc.config.MitmEnabled {
+					return goproxy.MitmConnect, host
+				}
+				return goproxy.OkConnect, host
+			}))
+
+			// Set the MitM config
+			goproxy.GoproxyCa = *caPair
+			goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: goproxy.TLSConfigFromCA(caPair)}
+			goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: goproxy.TLSConfigFromCA(caPair)}
+			goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: goproxy.TLSConfigFromCA(caPair)}
+			goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: goproxy.TLSConfigFromCA(caPair)}
+		} else {
+			fmt.Printf("Warning: Failed to load CA pair for MitM: %v\n", err)
+		}
+	}
+
+	// Register Handlers
+	svc.registerHandlers()
+
+	return svc
 }
 
 // captureResponseWriter wraps http.ResponseWriter to capture status code
@@ -53,13 +94,117 @@ func (w *captureResponseWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
+func (s *Service) registerHandlers() {
+	s.proxy.OnRequest().DoFunc(func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+		ctx.UserData = map[string]interface{}{"start": time.Now()}
+
+		// Capture Request Body if enabled
+		if s.CaptureBody {
+			// We need to read and restore the body
+			if r.Body != nil {
+				bodyBytes, _ := io.ReadAll(r.Body)
+				r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+				// Store in context for Response hook
+				if data, ok := ctx.UserData.(map[string]interface{}); ok {
+					data["reqBody"] = string(truncate(bodyBytes, 4096)) // Cap at 4KB
+				}
+			}
+		}
+		return r, nil
+	})
+
+	s.proxy.OnResponse().DoFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+		var start time.Time
+		var reqBody string
+
+		if data, ok := ctx.UserData.(map[string]interface{}); ok {
+			if t, ok := data["start"].(time.Time); ok {
+				start = t
+			}
+			if b, ok := data["reqBody"].(string); ok {
+				reqBody = b
+			}
+		} else {
+			start = time.Now() // Fallback
+		}
+
+		respBody := ""
+		if s.CaptureBody && resp != nil && resp.Body != nil {
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			respBody = string(truncate(bodyBytes, 4096))
+		}
+
+		// Emit Log
+		if resp != nil {
+			s.emitFullEvent(resp.Request, resp, start, reqBody, respBody)
+		}
+		return resp
+	})
+}
+
+func truncate(b []byte, n int) []byte {
+	if len(b) > n {
+		return b[:n]
+	}
+	return b
+}
+
+func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start time.Time, reqBody, respBody string) {
+	if s.ctx == nil {
+		return
+	}
+
+	duration := time.Since(start).Milliseconds()
+	status := 0
+	size := int64(0)
+	respHeaders := make(map[string]string)
+
+	if resp != nil {
+		status = resp.StatusCode
+		size = resp.ContentLength
+		for k, v := range resp.Header {
+			respHeaders[k] = strings.Join(v, ", ")
+		}
+	}
+
+	reqHeaders := make(map[string]string)
+	if req != nil {
+		for k, v := range req.Header {
+			reqHeaders[k] = strings.Join(v, ", ")
+		}
+	}
+
+	event := ProxyRequestEvent{
+		Method:      req.Method,
+		URL:         req.URL.String(),
+		Status:      status,
+		Duration:    duration,
+		Time:        start.Format("15:04:05"),
+		Size:        size,
+		ReqHeaders:  reqHeaders,
+		RespHeaders: respHeaders,
+		ReqBody:     reqBody,
+		RespBody:    respBody,
+	}
+
+	runtime.EventsEmit(s.ctx, "proxy:log", event)
+
+	// Also log to disk (minimal version)
+	logger.LogAccess(logger.AccessEntry{
+		Time:       event.Time,
+		Timestamp:  start.Unix(),
+		Method:     event.Method,
+		URL:        event.URL,
+		Status:     status,
+		DurationMs: duration,
+		Size:       size,
+	})
+}
+
 // ServeHTTP wraps the goproxy handler to intercept "direct/reverse proxy" requests.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	start := time.Now()
-
-	// Wrap writer to capture status
-	rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200} // Default 200
-
 	// 0. Security Check
 	if s.config.AuthEnabled {
 		authHeader := r.Header.Get("Proxy-Authorization")
@@ -70,13 +215,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		expected := "Bearer " + s.config.AuthToken
 		// Simple check: header must equal exactly "Bearer <token>"
 		if authHeader != expected {
+			rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200}
 			if r.Method == "CONNECT" {
 				rw.WriteHeader(http.StatusProxyAuthRequired)
 			} else {
 				rw.WriteHeader(http.StatusUnauthorized)
 			}
 			rw.Write([]byte("Proxy Authentication Required"))
-			s.emitEvent(r, rw.statusCode, start)
 			return
 		}
 
@@ -88,71 +233,18 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 1. Check if z.ai is enabled and if request is "Reverse Proxy" style
 	if s.config.ZaiEnabled {
 		if r.URL.Scheme == "" || r.URL.Host == "" {
+			rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200}
 			s.handleZaiForward(rw, r)
-			s.emitEvent(r, rw.statusCode, start)
 			return
 		}
 	}
 
 	// 2. Otherwise default to standard goproxy (Forward Proxy)
-	// We need to use 'rw' here too? goproxy might not be happy with a wrapped writer if it tries to hijack.
-	// Hijacker interface check:
-	// If the underlying w supports Hijack, our wrapper must too.
-	// For simple HTTP/HTTPS proxying via CONNECT, goproxy hijacks the connection.
-	// Creating a robust wrapper that supports Hijack is complex.
-	// For CONNECT method, we might lose status code capture because goproxy takes over the raw net.Conn.
-	// For now, let's pass original 'w' to goproxy to avoid breaking CONNECT/SSL,
-	// and accept that we might not capture the *exact* status code for CONNECT requests,
-	// or we can try to guess/emit "200" if it returns successfully?
-	//
-	// Improved approach: Only wrap for non-CONNECT methods or handle Hijack.
-	// For MVP simplicity: Pass 'w' (original) to s.proxy.ServeHTTP.
-	// We won't see the status code for standard proxy requests in this iteration.
-	//
-	// Wait, if we want to monitor traffic, we really want that status code.
-	// Let's implement a minimal event emit *after* the call.
-	// If we can't capture status easily without Hijack support, sending 0 or 200 is a fallback.
-	// Let's stick to emitting "Request Started" info or minimal info.
-
 	s.proxy.ServeHTTP(w, r)
-
-	// For standard proxy, since we didn't wrap, we assume success or rely on goproxy logging.
-	// We can still emit the event that a request happened.
-	s.emitEvent(r, 0, start) // Status 0 indicates "Unknown/Tunnel"
-}
-
-func (s *Service) emitEvent(r *http.Request, status int, start time.Time) {
-	if s.ctx != nil {
-		duration := time.Since(start).Milliseconds()
-		event := ProxyRequestEvent{
-			Method:   r.Method,
-			URL:      r.URL.String(),
-			Status:   status,
-			Duration: duration,
-			Time:     start.Format("15:04:05"),
-		}
-		runtime.EventsEmit(s.ctx, "proxy:request", event)
-
-		// Persistent Logging
-		logger.LogAccess(logger.AccessEntry{
-			Time:       event.Time,
-			Timestamp:  start.Unix(),
-			Method:     r.Method,
-			URL:        r.URL.String(),
-			Status:     status,
-			DurationMs: duration,
-			ClientIP:   r.RemoteAddr,
-			UserAgent:  r.UserAgent(),
-			Size:       0, // We aren't capturing size yet in captureResponseWriter without more work
-		})
-	}
 }
 
 func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
-	// ... (implementation of handleZaiForward needs to write to 'w' which is our capture wrapper)
-	// The implementation below uses 'w' which is the argument.
 	targetBase := s.config.ZaiBaseURL
-	// ...
 	// Ensure we use the passed 'w', which is our 'rw' wrapper.
 
 	targetBase = strings.TrimRight(targetBase, "/")
@@ -205,7 +297,13 @@ func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+
+	// Copy body
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	w.Write(bodyBytes)
+
+	// Manually emit event since we bypassed goproxy
+	s.emitFullEvent(r, resp, time.Now(), "[Z.AI Forward]", string(truncate(bodyBytes, 4096)))
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -225,7 +323,7 @@ func (s *Service) Start(ctx context.Context) error {
 	addr := fmt.Sprintf(":%d", s.config.ProxyPort)
 	s.server = &http.Server{
 		Addr:    addr,
-		Handler: s, // Use 's' (Service) as the handler, which wraps ServeHTTP
+		Handler: s,
 	}
 
 	log.Printf("[Proxy] Starting on %s\n", addr)

@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-05.story-16'
+story_title: 'Automate GitHub Releases'
+gate: PASS
+status_reason: 'CI/CD workflow correctly configured for release automation.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:40:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

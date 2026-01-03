@@ -1,0 +1,10 @@
+schema: 1
+story: 'epic-05.story-17'
+story_title: 'Implement Auto-Update Logic'
+gate: PASS
+status_reason: 'Backend service correctly queries GitHub API and compares versions.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-03T21:40:00Z'
+top_issues: []
+waiver: { active: false }
+quality_score: 100

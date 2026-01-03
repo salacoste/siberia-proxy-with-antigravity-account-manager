@@ -6,6 +6,8 @@ import {accounts} from '../models';
 
 export function ActivateAccount(arg1:number):Promise<void>;
 
+export function CheckCertTrust():Promise<boolean>;
+
 export function CheckForUpdates():Promise<updater.UpdateInfo>;
 
 export function CreateAccount(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
@@ -17,6 +19,8 @@ export function GetAppConfig():Promise<config.AppConfig>;
 export function GetVersion():Promise<string>;
 
 export function Greet(arg1:string):Promise<string>;
+
+export function InstallCert():Promise<void>;
 
 export function ListAccounts():Promise<Array<accounts.AccountDTO>>;
 

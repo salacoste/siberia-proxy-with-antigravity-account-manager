@@ -6,6 +6,10 @@ export function ActivateAccount(arg1) {
   return window['go']['main']['App']['ActivateAccount'](arg1);
 }
 
+export function CheckCertTrust() {
+  return window['go']['main']['App']['CheckCertTrust']();
+}
+
 export function CheckForUpdates() {
   return window['go']['main']['App']['CheckForUpdates']();
 }
@@ -28,6 +32,10 @@ export function GetVersion() {
 
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
+}
+
+export function InstallCert() {
+  return window['go']['main']['App']['InstallCert']();
 }
 
 export function ListAccounts() {
