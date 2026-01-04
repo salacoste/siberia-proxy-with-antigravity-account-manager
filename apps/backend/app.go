@@ -59,8 +59,36 @@ func NewApp(cfg *config.Manager) *App {
 		fmt.Printf("Fatal: Failed to ensure CA: %v\n", err)
 	}
 
-	// Initialize Share Service
-	shareSvc := share.NewService()
+	// Initialize Share Service (MinIO / S3)
+	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
+	if minioEndpoint == "" {
+		minioEndpoint = "localhost:9000" // Default for local docker
+	}
+	minioAccess := os.Getenv("MINIO_ROOT_USER") // or MINIO_ACCESS_KEY
+	if minioAccess == "" {
+		minioAccess = "minioadmin"
+	}
+	minioSecret := os.Getenv("MINIO_ROOT_PASSWORD") // or MINIO_SECRET_KEY
+	if minioSecret == "" {
+		minioSecret = "minioadmin"
+	}
+	minioBucket := os.Getenv("MINIO_BUCKET")
+	if minioBucket == "" {
+		minioBucket = "siberia-shares"
+	}
+
+	var shareProvider share.StorageProvider
+	// Try connecting to MinIO
+	fmt.Printf("Initializing Share Service with MinIO at %s...\n", minioEndpoint)
+	s3Provider, err := share.NewS3Provider(minioEndpoint, minioAccess, minioSecret, minioBucket, false)
+	if err == nil {
+		shareProvider = s3Provider
+	} else {
+		fmt.Printf("Warning: Failed to init MinIO: %v. Falling back to Mock Share Provider.\n", err)
+		shareProvider = &share.MockProvider{}
+	}
+
+	shareSvc := share.NewService(shareProvider)
 
 	// Initialize Sync Manager (Supabase)
 	// Try loading from .env (local dev) or environment

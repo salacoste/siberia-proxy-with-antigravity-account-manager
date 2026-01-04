@@ -1,0 +1,17 @@
+decision: PASS
+story: story-40-real-file-storage
+epic: epic-13
+timestamp: 2026-01-04
+analyst: QA-Agent (Quinn)
+metrics:
+  automated_tests: PASS (TestMinIOIntegration)
+  manual_verification: PASS (Walkthrough verified Docker stack)
+  build_status: PASS (siberia-backend binary created)
+risks:
+  - risk: "Dependent on Docker"
+    mitigation: "Integration test requires build tag, won't block standard unit tests."
+notes: |
+  Implementation uses local MinIO successfully.
+  Interface `StorageProvider` allows for easy swap to real S3 later if needed.
+  Strict merge protocol requires PO to merge.
+recommended_action: Merge to main

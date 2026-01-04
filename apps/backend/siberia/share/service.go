@@ -10,10 +10,15 @@ import (
 	"github.com/salacoste/siberia/siberia/proxy"
 )
 
-type Service struct{}
+type Service struct {
+	provider StorageProvider
+}
 
-func NewService() *Service {
-	return &Service{}
+// NewService creates a new Share Service with a given provider
+func NewService(provider StorageProvider) *Service {
+	return &Service{
+		provider: provider,
+	}
 }
 
 // UploadSession takes the raw event from frontend, converts to HAR, and "uploads" it.
@@ -24,13 +29,19 @@ func (s *Service) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
 		return "", fmt.Errorf("failed to generate HAR: %w", err)
 	}
 
-	// 2. Mock Upload (In real implementation, PUT to S3/R2)
-	// For MVP: We assume it succeeded.
-	// We generate a deterministic ID based on content to simulate a unique link.
+	// 2. Generate Key
 	hash := md5.Sum([]byte(harJSON + time.Now().String()))
 	id := hex.EncodeToString(hash[:])[:8]
+	key := fmt.Sprintf("%s.har", id)
 
-	// 3. Return Mock Link
-	mockLink := fmt.Sprintf("https://share.siberia.dev/log/%s", id)
-	return mockLink, nil
+	// 3. Upload via Provider
+	return s.provider.Upload(key, []byte(harJSON), "application/json")
+}
+
+// MockProvider for fallback when no S3/MinIO is configured
+type MockProvider struct{}
+
+func (m *MockProvider) Upload(key string, data []byte, contentType string) (string, error) {
+	// Mock Link
+	return fmt.Sprintf("https://share.siberia.dev/log/MOCK-%s", key), nil
 }

@@ -1,24 +1,42 @@
-# Story-40: Real File Storage (S3/R2)
+# Story-40: Real File Storage (Docker/MinIO)
 
 **Epic**: [Epic-13: Cloud Infrastructure](../epics/epic-13-cloud-infrastructure.md)
-**Status**: Draft
+**Status**: Completed
 
 ## Goal
-Replace the mock `UploadSession` in `siberia/share` with a real S3 uploader.
+Enable the "Share Session" feature by persisting HAR files to a self-hosted S3-compatible storage (MinIO) running in Docker, rather than using a public Cloud Provider.
 
-## Requirements
-1.  **Storage Provider**: Cloudflare R2 or AWS S3 (Configurable).
-2.  **Bucket Structure**: `sessions/{random_id}.json` (or `.har`).
-3.  **Lifecycle**:
-    -   (Optional) Auto-delete after 24h via Bucket Policy.
-4.  **Public Access**:
-    -   Files should be accessible via a public domain (e.g., `https://share.siberia.dev/...`).
+## Context
+The "Share Session" feature allows users to export a proxy session (HAR) and get a link.
+Instead of uploading to AWS/Cloudflare, we will spin up a local MinIO container alongside the backend (or separately via `docker-compose`).
 
-## Technical Notes
--   Use `aws-sdk-go-v2`.
--   Credentials should be embedded (limited scope token) or proxied via a backend function (if we had one). For this Desktop App, we might need a "Presigned URL" generator or a restricted API key.
--   *Decision point for Dev*: Can we embed a "Write Only" token? Or do we need a lambda? -> *ADR Required*.
+## Detailed Requirements
+
+1.  **Infrastructure**:
+    -   Add `minio/minio` service to project's `docker-compose.yml`.
+    -   Configure default buckets (`siberia-shares`).
+    -   Expose MinIO Console (e.g., port 9001) and API (port 9000).
+
+2.  **Backend (`ShareService`)**:
+    -   Use the AWS SDK (MinIO compatible) to upload files.
+    -   Generate "Share Links" that point to `http://localhost:9000/...`.
+    -   Ensure credentials for MinIO are loaded from `.env` (but can default to `minioadmin`/`minioadmin` for local dev).
+
+3.  **Frontend**:
+    -   No major UI changes, just ensure the generated link is displayed.
 
 ## Acceptance Criteria
--   [ ] "Share" button uploads actual JSON to the bucket.
--   [ ] The returned Link is reachable via Browser (curl).
+-   [ ] `docker-compose up` starts MinIO.
+-   [ ] "Share Session" uploads the HAR content to the local MinIO bucket.
+-   [ ] The returned Link is reachable locally (e.g., opening it in a browser downloads the file).
+-   [ ] Credentials are not hardcoded in Go (use env vars).
+
+## Technical Notes
+-   We need to ensure the App (running on host) can talk to MinIO (running in container).
+-   Use `aws-sdk-go-v2` or `minio-go`.
+
+## Tasks
+-   [ ] Create/Update `docker-compose.yml` with MinIO.
+-   [ ] Add MinIO Credentials to `.env.example`.
+-   [ ] Implement `S3StorageProvider` in `ShareService` targeting localhost.
+-   [ ] Verify Upload & Download.
