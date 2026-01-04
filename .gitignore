@@ -1,11 +1,35 @@
-builds/
-apps/backend/build/
-node_modules/
+# General
 .DS_Store
-.idea/
-.vscode/
-apps/backend/siberia_backend
+*.log
+tmp/
+.tmp/
 
-# Secrets
-.env
-apps/backend/.env
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go
+apps/backend/backend-server
+apps/backend/server
+apps/backend/siberia-backend
+*.exe
+*.test
+*.prof
+
+# Node/Frontend
+node_modules/
+apps/frontend/node_modules/
+apps/frontend/dist/
+apps/frontend/.env.local
+
+# Wails
+apps/backend/build/
+apps/frontend/wailsjs/
+
+# Local Data (MinIO / SQLite)
+data/minio/
+*.db
+*.db-shm
+*.db-wal
