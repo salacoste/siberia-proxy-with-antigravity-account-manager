@@ -49,6 +49,69 @@ export namespace accounts {
 
 }
 
+export namespace analytics {
+	
+	export class DomainStat {
+	    domain: string;
+	    count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DomainStat(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.domain = source["domain"];
+	        this.count = source["count"];
+	    }
+	}
+	export class AnalyticsSnapshot {
+	    rps: number;
+	    bandwidth_in_speed: number;
+	    bandwidth_out_speed: number;
+	    active_connections: number;
+	    top_domains: DomainStat[];
+	    response_codes: Record<string, number>;
+	    protocol_breakdown: Record<string, number>;
+	    total_requests: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new AnalyticsSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rps = source["rps"];
+	        this.bandwidth_in_speed = source["bandwidth_in_speed"];
+	        this.bandwidth_out_speed = source["bandwidth_out_speed"];
+	        this.active_connections = source["active_connections"];
+	        this.top_domains = this.convertValues(source["top_domains"], DomainStat);
+	        this.response_codes = source["response_codes"];
+	        this.protocol_breakdown = source["protocol_breakdown"];
+	        this.total_requests = source["total_requests"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace config {
 	
 	export class AppConfig {
@@ -175,6 +238,33 @@ export namespace proxy {
 		    return a;
 		}
 	}
+	export class WebSocketFrame {
+	    id: string;
+	    time: string;
+	    direction: string;
+	    opcode: number;
+	    payload: string;
+	    length: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSocketFrame(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.time = source["time"];
+	        this.direction = source["direction"];
+	        this.opcode = source["opcode"];
+	        this.payload = source["payload"];
+	        this.length = source["length"];
+	    }
+	}
+
+}
+
+export namespace types {
+	
 	export class ProxyRequestEvent {
 	    method: string;
 	    url: string;
@@ -203,28 +293,6 @@ export namespace proxy {
 	        this.resp_headers = source["resp_headers"];
 	        this.req_body = source["req_body"];
 	        this.resp_body = source["resp_body"];
-	    }
-	}
-	export class WebSocketFrame {
-	    id: string;
-	    time: string;
-	    direction: string;
-	    opcode: number;
-	    payload: string;
-	    length: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new WebSocketFrame(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.time = source["time"];
-	        this.direction = source["direction"];
-	        this.opcode = source["opcode"];
-	        this.payload = source["payload"];
-	        this.length = source["length"];
 	    }
 	}
 

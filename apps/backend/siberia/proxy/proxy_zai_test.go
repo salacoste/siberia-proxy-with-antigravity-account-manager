@@ -34,7 +34,7 @@ func TestZaiReverseProxy(t *testing.T) {
 		ZaiBaseURL: mockZai.URL, // Point to our mock instead of real z.ai
 		ZaiApiKey:  "test-key-123",
 	}
-	svc := NewService(cfg, nil)
+	svc := NewService(cfg, nil, nil)
 
 	// 3. Create Request to the Proxy (acting as Reverse Proxy)
 	// Note: Request URL is relative (/v1/models), simulating a client hitting the proxy endpoint directly

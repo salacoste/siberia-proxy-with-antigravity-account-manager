@@ -5,26 +5,30 @@ import (
 	"sync"
 	"time"
 
+	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/logger"
+	"github.com/salacoste/siberia/siberia/types"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // TelemetryManager handles async logging and event emission
 type TelemetryManager struct {
-	eventsChan    chan ProxyRequestEvent
+	eventsChan    chan types.ProxyRequestEvent
 	ctx           context.Context
 	skipWails     bool
 	wg            sync.WaitGroup
 	bufferSize    int
 	droppedEvents int64
 	mu            sync.Mutex
+	analytics     *analytics.AnalyticsEngine
 }
 
 // NewTelemetryManager creates a new manager with specified buffer size
-func NewTelemetryManager(bufferSize int) *TelemetryManager {
+func NewTelemetryManager(bufferSize int, analyticsEngine *analytics.AnalyticsEngine) *TelemetryManager {
 	return &TelemetryManager{
-		eventsChan: make(chan ProxyRequestEvent, bufferSize),
+		eventsChan: make(chan types.ProxyRequestEvent, bufferSize),
 		bufferSize: bufferSize,
+		analytics:  analyticsEngine,
 	}
 }
 
@@ -47,7 +51,7 @@ func (tm *TelemetryManager) Stop() {
 }
 
 // Emit queues an event. If buffer is full, it drops the event to preserve performance.
-func (tm *TelemetryManager) Emit(event ProxyRequestEvent) {
+func (tm *TelemetryManager) Emit(event types.ProxyRequestEvent) {
 	select {
 	case tm.eventsChan <- event:
 		// Queued successfully
@@ -79,6 +83,11 @@ func (tm *TelemetryManager) worker() {
 			DurationMs: event.Duration,
 			Size:       event.Size,
 		})
+
+		// 3. Update Analytics
+		if tm.analytics != nil {
+			tm.analytics.Track(event)
+		}
 	}
 }
 

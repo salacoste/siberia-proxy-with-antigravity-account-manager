@@ -24,7 +24,7 @@ func TestProxyService(t *testing.T) {
 	cfg.ProxyPort = 19999
 
 	// 2. Start Proxy
-	svc := NewService(cfg, nil)
+	svc := NewService(cfg, nil, nil)
 	// Hack: We need to tell the manager to skip wails.
 	// Since Start calls manager.Start with hardcoded false, we might have a problem.
 	// Better approach: NewService configures it?

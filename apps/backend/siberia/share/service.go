@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/salacoste/siberia/siberia/export"
-	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/types"
 )
 
 type Service struct {
@@ -22,7 +22,7 @@ func NewService(provider StorageProvider) *Service {
 }
 
 // UploadSession takes the raw event from frontend, converts to HAR, and "uploads" it.
-func (s *Service) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
+func (s *Service) UploadSession(event types.ProxyRequestEvent) (string, error) {
 	// 1. Convert to HAR
 	harJSON, err := export.ToHAR(event)
 	if err != nil {

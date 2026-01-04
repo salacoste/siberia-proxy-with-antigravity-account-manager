@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/types"
 )
 
 func TestToHAR(t *testing.T) {
 	// 1. Setup Mock Event
-	event := proxy.ProxyRequestEvent{
+	event := types.ProxyRequestEvent{
 		Method:   "POST",
 		URL:      "https://api.example.com/v1/data",
 		Status:   201,

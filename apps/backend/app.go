@@ -7,6 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/salacoste/siberia/siberia/accounts"
+	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
@@ -18,14 +19,15 @@ import (
 	"github.com/salacoste/siberia/siberia/modules/vault"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/salacoste/siberia/siberia/share"
+	"github.com/salacoste/siberia/siberia/types"
 	"github.com/salacoste/siberia/siberia/updater"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // RegisterTypes is a dummy method to force Wails to generate bindings for these types
 // They are used in Events but not in other methods, so Wails v2 skips them otherwise.
-func (a *App) RegisterTypes() (proxy.PendingRequest, proxy.WebSocketFrame) {
-	return proxy.PendingRequest{}, proxy.WebSocketFrame{}
+func (a *App) RegisterTypes() (proxy.PendingRequest, proxy.WebSocketFrame, types.ProxyRequestEvent) {
+	return proxy.PendingRequest{}, proxy.WebSocketFrame{}, types.ProxyRequestEvent{}
 }
 
 // App struct
@@ -41,6 +43,7 @@ type App struct {
 	caService        *ca.Service
 	shareService     *share.Service
 	syncManager      *sync.Manager
+	AnalyticsService *analytics.AnalyticsService
 }
 
 // NewApp creates a new App application struct
@@ -59,6 +62,10 @@ func NewApp(cfg *config.Manager) *App {
 	if err := caSvc.EnsureCA(); err != nil {
 		fmt.Printf("Fatal: Failed to ensure CA: %v\n", err)
 	}
+
+	// Initialize Analytics
+	analyticsEngine := analytics.NewAnalyticsEngine()
+	analyticsSvc := analytics.NewAnalyticsService(analyticsEngine)
 
 	// Initialize Share Service (MinIO / S3)
 	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
@@ -120,7 +127,7 @@ func NewApp(cfg *config.Manager) *App {
 
 	return &App{
 		config:           cfg,
-		proxyService:     proxy.NewService(&cfg.Config, caSvc),
+		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine),
 		database:         database,
 		accountService:   accounts.NewService(database, cfg),
 		processService:   process.NewService(),
@@ -129,6 +136,7 @@ func NewApp(cfg *config.Manager) *App {
 		caService:        caSvc,
 		shareService:     shareSvc,
 		syncManager:      syncMgr,
+		AnalyticsService: analyticsSvc,
 	}
 }
 
@@ -257,7 +265,7 @@ func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 }
 
 // UploadSession exports a request as HAR and uploads it
-func (a *App) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
+func (a *App) UploadSession(event types.ProxyRequestEvent) (string, error) {
 	return a.shareService.UploadSession(event)
 }
 
