@@ -29,8 +29,8 @@ func main() {
 	// Create application with options
 	err = wails.Run(&options.App{
 		Title:  "siberia",
-		Width:  1024,
-		Height: 768,
+		Width:  cfgManager.Config.WindowWidth,
+		Height: cfgManager.Config.WindowHeight,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

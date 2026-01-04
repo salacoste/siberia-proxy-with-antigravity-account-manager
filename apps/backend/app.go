@@ -207,8 +207,33 @@ func (a *App) startup(ctx context.Context) {
 
 // shutdown is called at application termination
 func (a *App) shutdown(ctx context.Context) {
+	// Save Window Size
+	if width, height := runtime.WindowGetSize(ctx); width > 0 && height > 0 {
+		config := a.config.Get()
+		config.WindowWidth = width
+		config.WindowHeight = height
+		// We use Update which saves to disk
+		_ = a.config.Update(config)
+	}
+
 	if a.proxyService != nil {
 		a.proxyService.Stop(ctx)
+	}
+}
+
+// SaveWindowSize persists the window dimensions (called from frontend on resize)
+// We ignore the passed arguments because frontend sometimes reports 0 on some platforms/webviews.
+// Instead we ask the Wails runtime for the authoritative window size.
+func (a *App) SaveWindowSize(frontendWidth, frontendHeight int) {
+	width, height := runtime.WindowGetSize(a.ctx)
+
+	if width > 0 && height > 0 {
+		config := a.config.Get()
+		config.WindowWidth = width
+		config.WindowHeight = height
+
+		// Use Update to save to disk
+		_ = a.config.Update(config)
 	}
 }
 

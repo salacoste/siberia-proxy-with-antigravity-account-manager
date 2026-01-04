@@ -45,9 +45,24 @@ func TestAnalyticsEngine_Track(t *testing.T) {
 
 	// 3. Check Bandwidth (approx)
 	// Since we use 1-second buckets, and test runs fast, it might be in the current bucket
-	// GetSnapshot averages over 5 seconds. 1024 bytes / 5s = 204.8 bytes/sec
-	if snap.BandwidthInSpeed == 0 {
-		t.Logf("Warning: Bandwidth might be 0 if bucket logic relies on strict seconds?")
+	// GetSnapshot averages over 5 seconds.
+	// Out size = 1024 bytes
+	// In size = Method(3) + URL(42) + headers(0) + body(0) = 45 bytes
+	// specific expected values:
+	// InSpeed = 45 / 5.0 = 9.0
+	// OutSpeed = 1024 / 5.0 = 204.8
+
+	if snap.BandwidthOutSpeed != 204.8 {
+		t.Errorf("Expected 204.8 BandwidthOut, got %f", snap.BandwidthOutSpeed)
+	}
+
+	if snap.BandwidthInSpeed != 9.0 {
+		t.Errorf("Expected 9.0 BandwidthIn, got %f", snap.BandwidthInSpeed)
+	}
+
+	// 4. Check Protocols
+	if snap.ProtocolBreakdown["HTTP/1.1"] != 1 {
+		t.Errorf("Expected 1 HTTP/1.1 request, got %v", snap.ProtocolBreakdown)
 	}
 }
 
@@ -66,5 +81,25 @@ func TestAnalyticsEngine_RateCalculation(t *testing.T) {
 	// 10 reqs / 5 sec window = 2.0 RPS
 	if snap.RPS != 2.0 {
 		t.Errorf("Expected 2.0 RPS, got %f", snap.RPS)
+	}
+}
+
+func TestAnalyticsEngine_ActiveConnections(t *testing.T) {
+	engine := NewAnalyticsEngine()
+
+	if engine.GetSnapshot().ActiveConnections != 0 {
+		t.Errorf("Expected 0 active connections initially")
+	}
+
+	engine.IncrementActive()
+	engine.IncrementActive()
+
+	if val := engine.GetSnapshot().ActiveConnections; val != 2 {
+		t.Errorf("Expected 2 active connections, got %d", val)
+	}
+
+	engine.DecrementActive()
+	if val := engine.GetSnapshot().ActiveConnections; val != 1 {
+		t.Errorf("Expected 1 active connection, got %d", val)
 	}
 }

@@ -9,12 +9,31 @@ import SettingsPage from './pages/SettingsPage';
 import { useConfigStore } from './stores/useConfigStore';
 import { useTheme } from './stores/useTheme';
 import { TrafficProvider } from './contexts/TrafficContext';
+import { SaveWindowSize } from '../wailsjs/go/main/App';
 
 function App() {
     // Initialize config and theme
     useTheme();
     React.useEffect(() => {
         useConfigStore.getState().fetchConfig();
+
+        // Window Persistence
+        let timeout: NodeJS.Timeout;
+        const handleResize = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(async () => {
+                try {
+                    await SaveWindowSize(window.outerWidth, window.outerHeight);
+                } catch (e) {
+                    console.error("Failed to save window size", e);
+                }
+            }, 1000);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(timeout);
+        };
     }, []);
 
     return (

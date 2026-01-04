@@ -19,6 +19,8 @@ type AppConfig struct {
 	ProxyPort       int    `json:"proxy_port"`
 	UpstreamProxy   string `json:"upstream_proxy"`
 	TargetIDE       string `json:"target_ide"` // "vscode", "cursor", "windsurf"
+	WindowWidth     int    `json:"window_width"`
+	WindowHeight    int    `json:"window_height"`
 
 	// z.ai Provider
 	ZaiEnabled bool   `json:"zai_enabled"`
@@ -60,6 +62,8 @@ func NewManager() (*Manager, error) {
 			ProxyPort:       7100,
 			UpstreamProxy:   "",
 			TargetIDE:       "vscode", // Default
+			WindowWidth:     1024,
+			WindowHeight:    768,
 			ZaiEnabled:      false,
 			ZaiBaseURL:      "https://api.z.ai/v1",
 			ZaiApiKey:       "",

@@ -36,7 +36,7 @@ export const TrafficChart: React.FC = () => {
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data}>
+                    <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorRps" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
@@ -55,8 +55,16 @@ export const TrafficChart: React.FC = () => {
                             tickLine={false}
                         />
                         <Tooltip
-                            contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
-                            itemStyle={{ color: 'var(--foreground)' }}
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--popover))',
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: 'var(--radius)',
+                                color: 'hsl(var(--popover-foreground))',
+                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                            }}
+                            itemStyle={{ color: 'hsl(var(--foreground))' }}
+                            labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '0.25rem' }}
+                            cursor={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
                         />
                         <Area
                             type="monotone"

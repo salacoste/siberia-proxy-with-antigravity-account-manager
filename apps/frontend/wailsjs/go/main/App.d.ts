@@ -36,6 +36,8 @@ export function RegisterTypes():Promise<proxy.PendingRequest>;
 
 export function ResumeRequest(arg1:string,arg2:proxy.ModifiedRequest):Promise<boolean>;
 
+export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
+
 export function SyncGetUser():Promise<string>;
 
 export function SyncPull(arg1:string):Promise<string>;

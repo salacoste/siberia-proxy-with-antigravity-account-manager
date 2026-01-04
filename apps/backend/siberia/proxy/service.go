@@ -303,6 +303,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Track Active Connection (Request Scope)
+	if s.TelemetryManager != nil && s.TelemetryManager.analytics != nil {
+		s.TelemetryManager.analytics.IncrementActive()
+		defer s.TelemetryManager.analytics.DecrementActive()
+	}
+
 	// 2. Otherwise default to standard goproxy (Forward Proxy)
 	s.proxy.ServeHTTP(w, r)
 }

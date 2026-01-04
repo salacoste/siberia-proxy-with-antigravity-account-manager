@@ -123,6 +123,8 @@ export namespace config {
 	    proxy_port: number;
 	    upstream_proxy: string;
 	    target_ide: string;
+	    window_width: number;
+	    window_height: number;
 	    zai_enabled: boolean;
 	    zai_base_url: string;
 	    zai_api_key: string;
@@ -145,6 +147,8 @@ export namespace config {
 	        this.proxy_port = source["proxy_port"];
 	        this.upstream_proxy = source["upstream_proxy"];
 	        this.target_ide = source["target_ide"];
+	        this.window_width = source["window_width"];
+	        this.window_height = source["window_height"];
 	        this.zai_enabled = source["zai_enabled"];
 	        this.zai_base_url = source["zai_base_url"];
 	        this.zai_api_key = source["zai_api_key"];

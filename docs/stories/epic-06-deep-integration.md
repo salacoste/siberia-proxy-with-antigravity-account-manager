@@ -1,5 +1,7 @@
 # Epic-06: Deep Integration - Real Process Injection
 
+**Status:** Released
+
 **Goal:** Replace the mocked process management and injection logic with real OS-specific implementations to enable functional account switching in VS Code.
 
 ## Existing System Context
