@@ -9,10 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ThemeToggle() {
-    const { setTheme, config } = useConfigStore((state) => ({
-        setTheme: state.setTheme,
-        config: state.config
-    }))
+    const setTheme = useConfigStore((state) => state.setTheme);
+    const config = useConfigStore((state) => state.config);
 
     return (
         <DropdownMenu>

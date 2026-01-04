@@ -57,7 +57,7 @@ func NewManager() (*Manager, error) {
 			AutoRefresh:     true,
 			RefreshInterval: 15,
 			DbSync:          true,
-			ProxyPort:       3000,
+			ProxyPort:       7100,
 			UpstreamProxy:   "",
 			TargetIDE:       "vscode", // Default
 			ZaiEnabled:      false,

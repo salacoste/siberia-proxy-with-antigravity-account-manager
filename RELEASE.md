@@ -1,45 +1,23 @@
-# Release Instructions
+# Release v1.1.0 - Production Infrastructure
 
-## Building Siberia
+**Date**: 2026-01-04
+**Milestone**: Feature Complete (Epics 01-13)
 
-### Prerequisites
-*   Go 1.21+
-*   Node.js 20+
-*   Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
+## 🚀 Key Features
+-   **Cloud Infrastructure**:
+    -   Real Authentication (Supabase Integration).
+    -   Real File Storage (MinIO S3 Provider).
+-   **Performance**:
+    -   Backend Concurrency Optimization (Worker Pools).
+    -   Frontend Visualization (10k+ Traffic Log Support).
+-   **Integrations**:
+    -   IDE Support: "Open Project" button for Cursor/VS Code.
+    -   Terminal Helper: `sib` CLI for easy proxy injection.
 
-### Build Command
-Run the following from the root directory:
+## 🛠 Fixes & Improvements
+-   Refactored `TrafficTable` for high performance.
+-   Secured `AccessLogger` with non-blocking I/O.
+-   Renamed project directory structure for clarity.
 
-```bash
-cd apps/backend
-wails build
-```
-
-The output binary will be located in `apps/backend/build/bin/`.
-
-### Cross-Compilation (CI/CD)
-The project is configured with GitHub Actions to build for macOS, Windows, and Linux automatically on push to `main`.
-
-### Versioning
-Update `wails.json` version field before tagging a release.
-
-## Creating a Release (CI/CD)
-The project uses GitHub Actions to automate releases.
-
-1.  **Bump Version:**
-    *   Update `version` in `apps/backend/wails.json` (e.g., `1.0.1`).
-    *   Update `GetVersion()` in `apps/backend/app.go`.
-    *   Commit changes: `git commit -m "chore: bump version to v1.0.1"`
-2.  **Tag & Push:**
-    *   `git tag v1.0.1`
-    *   `git push origin v1.0.1`
-3.  **Automation:**
-    *   GitHub Actions (`release.yml`) will trigger.
-    *   Binaries for Linux, Windows, and macOS will be built.
-    *   A GitHub Release will be created/updated with these assets.
-
-## Auto-Updater
-The application includes a built-in auto-updater.
-*   It queries the GitHub Releases API for the `latest` tag.
-*   If `latest > current`, it prompts the user to update.
-*   Users can manually check in **Settings > Application Info**.
+## 📦 Artifacts
+-   Mac Universal Binary: `siberia-v1.1.0-mac-universal` (Mock name)

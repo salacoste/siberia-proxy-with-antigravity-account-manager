@@ -23,7 +23,12 @@ export default function SettingsPage() {
         if (config) {
             setUpstream(config.upstream_proxy || '');
         }
-        GetVersion().then(setVersion);
+        // @ts-ignore
+        if (window.go) {
+            GetVersion().then(setVersion);
+        } else {
+            setVersion("Web Mode (Mock)");
+        }
     }, [config]);
 
     const handleSaveUpstream = () => {
@@ -35,6 +40,11 @@ export default function SettingsPage() {
     };
 
     const handleInstallCert = async () => {
+        // @ts-ignore
+        if (!window.runtime) {
+            toast.error("Certificate installation requires Wails App (Desktop).");
+            return;
+        }
         try {
             // @ts-ignore
             await window.runtime.Invoke("InstallCert");
@@ -89,11 +99,28 @@ export default function SettingsPage() {
         }
     };
 
-    if (!config) return <div className="p-8">Loading configuration...</div>;
+    if (!config) {
+        return (
+            <div className="flex items-center justify-center h-full p-8 text-muted-foreground">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+                    <p>Loading configuration...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-8 space-y-6">
-            <h1 className="text-3xl font-bold">Settings</h1>
+            <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold">Settings</h1>
+                {/* @ts-ignore */}
+                {!window.go && (
+                    <span className="px-2 py-1 text-xs font-mono bg-yellow-500/20 text-yellow-500 rounded border border-yellow-500/50">
+                        WEB MODE (Mock Data)
+                    </span>
+                )}
+            </div>
 
             {/* Theme */}
             <Card>

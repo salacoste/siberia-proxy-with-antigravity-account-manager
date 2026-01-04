@@ -19,8 +19,29 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     error: null,
 
     fetchConfig: async () => {
+        set({ isLoading: true });
+        // @ts-ignore
+        if (!window.go) {
+            console.warn("Wails runtime not found. Using Mock Data.");
+            const mockConfig = new config.AppConfig({
+                proxy_port: 7100,
+                control_port: 7101,
+                config_dir: "/mock/path",
+                mitm_enabled: false,
+                upstream_proxy: "",
+                auth_enabled: false,
+                auth_token: "mock-token",
+                zai_enabled: false,
+                zai_base_url: "https://api.strll.ai/v1",
+                zai_api_key: "",
+                theme: "dark",
+                target_ide: "vscode"
+            });
+            set({ config: mockConfig, isLoading: false });
+            return;
+        }
+
         try {
-            set({ isLoading: true });
             const data = await GetAppConfig();
             set({ config: data, isLoading: false });
         } catch (err: any) {
@@ -29,9 +50,16 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     },
 
     updateConfig: async (newConfig: config.AppConfig) => {
+        // Optimistic update
+        set({ config: newConfig });
+
+        // @ts-ignore
+        if (!window.go) {
+            console.warn("Wails runtime not found. Skipping backend update.");
+            return;
+        }
+
         try {
-            // Optimistic update
-            set({ config: newConfig });
             await UpdateAppConfig(newConfig);
         } catch (err: any) {
             // Revert on failure (reload from backend)

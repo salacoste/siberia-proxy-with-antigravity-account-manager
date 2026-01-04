@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import RootLayout from './components/layout/RootLayout';
 import DashboardPage from './pages/DashboardPage';
 import AccountsPage from './pages/AccountsPage';
@@ -19,7 +19,7 @@ function App() {
 
     return (
         <TrafficProvider>
-            <HashRouter>
+            <BrowserRouter>
                 <Routes>
                     <Route element={<RootLayout />}>
                         <Route path="/" element={<DashboardPage />} />
@@ -32,7 +32,7 @@ function App() {
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Route>
                 </Routes>
-            </HashRouter>
+            </BrowserRouter>
         </TrafficProvider>
     );
 }
