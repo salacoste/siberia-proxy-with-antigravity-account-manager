@@ -33,3 +33,7 @@ data/minio/
 *.db
 *.db-shm
 *.db-wal
+
+# Secrets
+.env
+apps/backend/.env
