@@ -1,7 +1,7 @@
 # Story-39: Real Cloud Backend (Supabase Sync)
 
 **Epic**: [Epic-13: Cloud Infrastructure](../epics/epic-13-cloud-infrastructure.md)
-**Status**: Draft
+**Status**: Completed
 
 ## Goal
 Replace the in-memory `MockServer` in `siberia/modules/sync` with a real client that talks to Supabase.
