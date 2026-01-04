@@ -1,6 +1,6 @@
 # Story-49: Data Visualization (Recharts)
 
-## Description
+**Status:** Completed
 Implement rich data visualization for the Analytics Dashboard using `recharts`. The dashboard should display real-time traffic statistics, including request rates, status code distribution, and top domains.
 
 ## Requirements
