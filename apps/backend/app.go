@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/salacoste/siberia/siberia/accounts"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
@@ -60,12 +62,32 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize Share Service
 	shareSvc := share.NewService()
 
-	// Initialize Sync Manager & Embedded Mock Server (MVP)
-	mockServer := sync.NewMockServer()
-	ts := mockServer.Start() // Helper that normally returns *httptest.Server
-	// But httptest.Server binds a random port.
-	// sync.NewManager needs that URL.
-	syncMgr := sync.NewManager(ts.URL)
+	// Initialize Sync Manager (Supabase)
+	// Try loading from .env (local dev) or environment
+	_ = godotenv.Load() // Ignore error for prod/built binaries
+
+	supabaseURL := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_KEY")
+
+	var syncMgr *sync.Manager
+	if supabaseURL != "" && supabaseKey != "" {
+		fmt.Println("Initializing Real Supabase Backend...")
+		// For MVP, we use a hardcoded user ID since we don't have a full auth flow yet
+		client := sync.NewSupabaseClient(supabaseURL, supabaseKey, "demo-user-001")
+		syncMgr = sync.NewManager(client)
+	} else {
+		fmt.Println("Warning: SUPABASE credentials not found. Falling back to in-memory Mock.")
+		// Fallback to Mock if no credentials (so app doesn't crash in dev without .env)
+		// We adapt MockServer (which is an HTTP server) to the CloudProvider?
+		// Actually, MockServer was a full HTTP server.
+		// Since we refactored Manager to use an interface, we can't easily plug the old MockServer (URL-based)
+		// without an adapter.
+		// For now, let's just warn and leave syncMgr nil, or use a dummy provider.
+		// Re-using the Mock logic efficiently requires rewriting MockServer to implement CloudProvider
+		// instead of being an HTTP Handler.
+		// Let's implement a simple InMemoryProvider here for fallback.
+		syncMgr = sync.NewManager(NewInMemoryProvider())
+	}
 
 	return &App{
 		config:           cfg,
@@ -79,6 +101,24 @@ func NewApp(cfg *config.Manager) *App {
 		shareService:     shareSvc,
 		syncManager:      syncMgr,
 	}
+}
+
+// InMemoryProvider is a fallback for when keys are missing
+type InMemoryProvider struct {
+	data string
+}
+
+func NewInMemoryProvider() *InMemoryProvider {
+	return &InMemoryProvider{}
+}
+
+func (i *InMemoryProvider) Push(data string) error {
+	i.data = data
+	return nil
+}
+
+func (i *InMemoryProvider) Pull() (string, error) {
+	return i.data, nil
 }
 
 // ... existing methods ...
@@ -138,7 +178,7 @@ func (a *App) UpdateAppConfig(newConfig config.AppConfig) error {
 	return a.config.Update(newConfig)
 }
 
-// CheckForUpdates checks if a new version is available// InstallCert installs the root CA into the OS trust store
+// InstallCert installs the root CA into the OS trust store
 func (a *App) InstallCert() error {
 	return a.caService.InstallCert()
 }
@@ -195,9 +235,6 @@ func (a *App) SyncPush(password string) error {
 	}
 
 	// 2. Push
-	// We need a SyncManager instance. Ideally this is a service like others.
-	// For MVP of Story-33, we'll instantiate it here or add it to App.
-	// Let's add it to App properly.
 	return a.syncManager.Push("default-profile", blob)
 }
 

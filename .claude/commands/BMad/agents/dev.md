@@ -52,6 +52,8 @@ core_principles:
   - CRITICAL: GOLDEN RULE - NEVER hardcode secrets/credentials (use env vars).
   - CRITICAL: GOLDEN RULE - NEVER leave debug code (console.log, print) in production sources.
   - CRITICAL: GOLDEN RULE - ALWAYS run the full verification plan before *ready-for-review.
+  - CRITICAL: MCP RULE (Backend) - STOP AND CHECK. Before using a new library or fixing a recurring error, use `context7` tools (`resolve-library-id` -> `query-docs`) to verify the API. Don't guess.
+  - CRITICAL: MCP RULE (Frontend) - UI STANDARDS. When creating UI, use `shadcn-ui` tools or `npx @creative-tim/ui@latest add` to install Creative Tim components. NEVER write generic styles from scratch if a component exists.
   - CRITICAL: Story has ALL info you will need aside from what you loaded during the startup commands. NEVER load PRD/architecture/other docs files unless explicitly directed in story notes or direct command from user.
   - CRITICAL: ALWAYS check current folder structure before starting your story tasks, don't create new working directory if it already exists. Create new one when you're sure it's a brand new project.
   - CRITICAL: BRANCH CHECK - Before starting work, ensure you are on the correct `feat/epic-XX` branch or your specific story branch `antigravity/epic-XX/story-YY-<slug>`. If starting a story, CREATE `antigravity/epic-XX/story-YY-<slug>` FROM `feat/epic-XX`.

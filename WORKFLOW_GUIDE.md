@@ -91,6 +91,23 @@ When finishing a task, Agents **MUST** provide a "Handoff Receipt" to ensure con
 
 ---
 
+## 🛠️ Tooling Strategy (MCP Servers)
+
+We enforce the use of specific AI tools to maintain quality and consistency.
+
+### 1. Creative Tim UI (`shadcn-ui`)
+*   **Mandatory for**: Frontend UI, Styles, Components.
+*   **Agents**: `/ux`, `/dev`.
+*   **Rule**: Do not invent generic components. Use `shadcn-ui` / Creative Tim registry.
+*   **Usage**: `npx @creative-tim/ui@latest add <component>` or `shadcn-ui` tools.
+
+### 2. Context 7 (`context7`)
+*   **Mandatory for**: Backend logic, Library APIs, Debugging.
+*   **Agents**: `/dev`, `/architect`
+*   **Rule**: "Stop and Check". If you are unsure of a library method or hit an error, verify with `context7` before guessing.
+
+---
+
 ## 🚫 Critical Constraints (All Agents)
 
 1.  **Context Hygiene**: Do not hallucinate file content. Read it (`view_file`) before acting.

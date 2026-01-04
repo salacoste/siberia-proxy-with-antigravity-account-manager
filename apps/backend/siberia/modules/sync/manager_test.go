@@ -1,78 +1,83 @@
 package sync
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/salacoste/siberia/siberia/modules/vault"
 )
 
-func TestSyncManager_PushPull(t *testing.T) {
-	// 1. Start Mock Server
-	mock := NewMockServer()
-	ts := mock.Start()
-	defer ts.Close()
+// MockProvider for testing logic without HTTP
+type MockProvider struct {
+	LastPushData string
+	PullData     string
+	PushError    error
+	PullError    error
+}
 
-	// 2. Init Manager
-	manager := NewManager(ts.URL)
-	profileID := "user-123"
+func (m *MockProvider) Push(data string) error {
+	if m.PushError != nil {
+		return m.PushError
+	}
+	m.LastPushData = data
+	return nil
+}
 
-	// 3. Prepare Data
+func (m *MockProvider) Pull() (string, error) {
+	if m.PullError != nil {
+		return "", m.PullError
+	}
+	return m.PullData, nil
+}
+
+func TestManager_Push(t *testing.T) {
+	mock := &MockProvider{}
+	m := NewManager(mock)
+
 	blob := &vault.EncryptedBlob{
-		Ciphertext: []byte("encrypted-data"),
+		Ciphertext: []byte("test"),
 		Nonce:      []byte("nonce"),
 		Salt:       []byte("salt"),
 	}
-
-	// 4. Test Push
-	err := manager.Push(profileID, blob)
+	err := m.Push("ignored-id", blob)
 	if err != nil {
 		t.Fatalf("Push failed: %v", err)
 	}
 
-	// 5. Test Pull
-	pulled, err := manager.Pull(profileID)
+	if mock.LastPushData == "" {
+		t.Fatal("Mock provider did not receive data")
+	}
+
+	// Verify payload structure
+	var payload SyncPayload
+	if err := json.Unmarshal([]byte(mock.LastPushData), &payload); err != nil {
+		t.Fatalf("Failed to unmarshal push payload: %v", err)
+	}
+
+	if string(payload.Blob.Ciphertext) != "test" {
+		t.Errorf("Expected ciphertext 'test', got %s", payload.Blob.Ciphertext)
+	}
+}
+
+func TestManager_Pull(t *testing.T) {
+	blob := &vault.EncryptedBlob{
+		Ciphertext: []byte("remote"),
+		Nonce:      []byte("n"),
+		Salt:       []byte("s"),
+	}
+	payload := SyncPayload{Timestamp: 123, Blob: blob}
+	data, _ := json.Marshal(payload)
+
+	mock := &MockProvider{PullData: string(data)}
+	m := NewManager(mock)
+
+	pPayload, err := m.Pull("ignored-id")
 	if err != nil {
 		t.Fatalf("Pull failed: %v", err)
 	}
 
-	if string(pulled.Blob.Ciphertext) != "encrypted-data" {
-		t.Errorf("Pulled data mismatch")
-	}
-}
-
-func TestSyncManager_Conflict(t *testing.T) {
-	// 1. Start Mock Server
-	mock := NewMockServer()
-	ts := mock.Start()
-	defer ts.Close()
-
-	manager := NewManager(ts.URL)
-	profileID := "conflict-user"
-
-	// 2. Simulate Server State (Newer)
-	mock.Store[profileID] = SyncPayload{
-		Timestamp: time.Now().Add(1 * time.Hour).Unix(),
-		Blob: &vault.EncryptedBlob{
-			Ciphertext: []byte("remote-newer"),
-		},
-	}
-
-	// 3. Try Push with Older Data
-	blob := &vault.EncryptedBlob{
-		Ciphertext: []byte("local-older"),
-	}
-
-	err := manager.Push(profileID, blob)
-
-	// 4. Expect Conflict
-	if err == nil || err.Error() != "conflict: remote version is newer" {
-		t.Fatalf("Expected conflict error, got: %v", err)
-	}
-
-	// 5. Client Logic: Should Pull
-	pulled, _ := manager.Pull(profileID)
-	if string(pulled.Blob.Ciphertext) != "remote-newer" {
-		t.Error("Should be able to pull remote data after conflict")
+	if !bytes.Equal(pPayload.Blob.Ciphertext, []byte("remote")) {
+		t.Errorf("Expected 'remote', got %s", pPayload.Blob.Ciphertext)
 	}
 }

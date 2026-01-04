@@ -5,3 +5,7 @@ node_modules/
 .idea/
 .vscode/
 apps/backend/siberia_backend
+
+# Secrets
+.env
+apps/backend/.env
