@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
     return (
-        <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800">
+        <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col h-full border-r border-border">
             <div className="p-6">
                 <h1 className="text-xl font-bold text-white tracking-wider flex items-center gap-2">
                     <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">S</span>

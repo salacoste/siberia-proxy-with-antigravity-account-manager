@@ -4,9 +4,9 @@ import { Toaster } from "@/components/ui/sonner"
 
 export default function RootLayout() {
     return (
-        <div className="flex h-screen w-screen bg-slate-950 text-slate-200 overflow-hidden">
+        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-auto bg-slate-950">
+            <main className="flex-1 overflow-auto bg-background">
                 <Outlet />
             </main>
             <Toaster />

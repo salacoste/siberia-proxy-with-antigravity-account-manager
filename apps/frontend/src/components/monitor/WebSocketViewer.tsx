@@ -17,9 +17,9 @@ export function WebSocketViewer({ frames, onClear }: WebSocketViewerProps) {
     }, [frames, autoScroll]);
 
     return (
-        <div className="flex flex-col h-full bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
-                <h3 className="text-sm font-semibold text-slate-200">Live WebSocket Stream</h3>
+        <div className="flex flex-col h-full bg-card rounded-lg border border-border overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground">Live WebSocket Stream</h3>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setAutoScroll(!autoScroll)}
