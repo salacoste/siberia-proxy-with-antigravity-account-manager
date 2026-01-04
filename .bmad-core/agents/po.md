@@ -67,6 +67,10 @@ commands:
       ROUTING:
       - If Complex/New Architecture: Handoff to /architect for design.
       - If Simple/Ready: Handoff to /dev for implementation.
+  - accept-story {story}: |
+      Validate "Definition of Done" (QA Gate passed?).
+      If valid: Mark story as Completed, Update Task List, and MERGE the feature branch to main.
+      If invalid: Reject and Handoff to /dev.
   - yolo: Toggle Yolo Mode off on - on will skip doc section confirmations
   - exit: Exit (confirm)
 dependencies:

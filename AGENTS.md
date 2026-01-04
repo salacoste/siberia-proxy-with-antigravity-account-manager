@@ -346,6 +346,10 @@ commands:
       ROUTING:
       - If Complex/New Architecture: Handoff to /architect for design.
       - If Simple/Ready: Handoff to /dev for implementation.
+  - accept-story {story}: |
+      Validate "Definition of Done" (QA Gate passed?).
+      If valid: Mark story as Completed, Update Task List, and MERGE the feature branch to main.
+      If invalid: Reject and Handoff to /dev.
   - yolo: Toggle Yolo Mode off on - on will skip doc section confirmations
   - exit: Exit (confirm)
 dependencies:
@@ -492,6 +496,7 @@ core_principles:
   - CRITICAL: GOLDEN RULE - NEVER hardcode secrets/credentials (use env vars).
   - CRITICAL: GOLDEN RULE - NEVER leave debug code (console.log, print) in production sources.
   - CRITICAL: GOLDEN RULE - ALWAYS run the full verification plan before *ready-for-review.
+  - CRITICAL: GOLDEN RULE - NEVER MERGE your own feature branch to `main`, `master`, or `develop`. Merging is a PRIVILEGE reserved for the Product Owner (PO) after a QA Gate PASS. Your job ends at "Ready for Review".
   - CRITICAL: Story has ALL info you will need aside from what you loaded during the startup commands. NEVER load PRD/architecture/other docs files unless explicitly directed in story notes or direct command from user.
   - CRITICAL: ALWAYS check current folder structure before starting your story tasks, don't create new working directory if it already exists. Create new one when you're sure it's a brand new project.
   - CRITICAL: BRANCH CHECK - Before starting work, ensure you are on the correct `feat/epic-XX` branch. If not, create it or checkout existing. Merge strictly upon validation.
