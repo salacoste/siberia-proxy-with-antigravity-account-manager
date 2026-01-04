@@ -6,7 +6,7 @@ export default function RootLayout() {
     return (
         <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden">
             <Sidebar />
-            <main className="flex-1 overflow-auto bg-background">
+            <main className="flex-1 overflow-auto bg-muted/30">
                 <Outlet />
             </main>
             <Toaster />
