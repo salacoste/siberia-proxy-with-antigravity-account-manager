@@ -207,4 +207,35 @@ export namespace proxy {
 		}
 	}
 
+	export class ProxyRequestEvent {
+		method: string;
+		url: string;
+		status: number;
+		duration_ms: number;
+		time: string;
+		size: number;
+		req_headers: { [key: string]: string };
+		resp_headers: { [key: string]: string };
+		req_body: string;
+		resp_body: string;
+
+		static createFrom(source: any = {}) {
+			return new ProxyRequestEvent(source);
+		}
+
+		constructor(source: any = {}) {
+			if ('string' === typeof source) source = JSON.parse(source);
+			this.method = source["method"];
+			this.url = source["url"];
+			this.status = source["status"];
+			this.duration_ms = source["duration_ms"];
+			this.time = source["time"];
+			this.size = source["size"];
+			this.req_headers = source["req_headers"];
+			this.resp_headers = source["resp_headers"];
+			this.req_body = source["req_body"];
+			this.resp_body = source["resp_body"];
+		}
+	}
+
 }

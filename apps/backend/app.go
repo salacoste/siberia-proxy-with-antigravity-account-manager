@@ -176,7 +176,6 @@ func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 }
 
 // UploadSession exports a request as HAR and uploads it
-// UploadSession exports a request as HAR and uploads it
 func (a *App) UploadSession(event proxy.ProxyRequestEvent) (string, error) {
 	return a.shareService.UploadSession(event)
 }
