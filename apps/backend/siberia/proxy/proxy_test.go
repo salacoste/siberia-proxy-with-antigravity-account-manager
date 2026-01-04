@@ -25,6 +25,19 @@ func TestProxyService(t *testing.T) {
 
 	// 2. Start Proxy
 	svc := NewService(cfg, nil)
+	// Hack: We need to tell the manager to skip wails.
+	// Since Start calls manager.Start with hardcoded false, we might have a problem.
+	// Better approach: NewService configures it?
+	// Or we override Start in test?
+	// Let's modify Service.Start to inspect a config or field.
+	// Actually, let's just make the Manager public/settable.
+	// Oh, I removed SkipWailsEvents from Service.
+	// Let's rely on the fact that Context.TODO() might panic if runtime is called?
+	// No, runtime.EventsEmit panics if Context is invalid.
+	// I need to skip it.
+
+	// Quick fix: Add SkipWails back to Service struct for configuration, pass to Manager in Start.
+	svc.SkipWailsEvents = true
 	if err := svc.Start(context.TODO()); err != nil {
 		t.Fatalf("Failed to start proxy: %v", err)
 	}

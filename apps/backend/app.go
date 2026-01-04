@@ -10,6 +10,7 @@ import (
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
+	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
@@ -101,7 +102,7 @@ func NewApp(cfg *config.Manager) *App {
 	if supabaseURL != "" && supabaseKey != "" {
 		fmt.Println("Initializing Real Supabase Backend...")
 		// For MVP, we use a hardcoded user ID since we don't have a full auth flow yet
-		client := sync.NewSupabaseClient(supabaseURL, supabaseKey, "demo-user-001")
+		client := sync.NewSupabaseClient(supabaseURL, supabaseKey)
 		syncMgr = sync.NewManager(client)
 	} else {
 		fmt.Println("Warning: SUPABASE credentials not found. Falling back to in-memory Mock.")
@@ -121,7 +122,7 @@ func NewApp(cfg *config.Manager) *App {
 		config:           cfg,
 		proxyService:     proxy.NewService(&cfg.Config, caSvc),
 		database:         database,
-		accountService:   accounts.NewService(database),
+		accountService:   accounts.NewService(database, cfg),
 		processService:   process.NewService(),
 		injectionService: injection.NewService(),
 		updaterService:   updater.NewService("v1.0.1"),
@@ -147,6 +148,18 @@ func (i *InMemoryProvider) Push(data string) error {
 
 func (i *InMemoryProvider) Pull() (string, error) {
 	return i.data, nil
+}
+
+func (i *InMemoryProvider) SignUp(email, password string) error {
+	return nil
+}
+
+func (i *InMemoryProvider) SignIn(email, password string) error {
+	return nil
+}
+
+func (i *InMemoryProvider) GetUser() string {
+	return "mock-user-id"
 }
 
 // ... existing methods ...
@@ -283,4 +296,38 @@ func (a *App) SyncPull(password string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+// SyncSignUp registers a user
+func (a *App) SyncSignUp(email, password string) error {
+	return a.syncManager.SignUp(email, password)
+}
+
+// SyncSignIn logs in a user
+func (a *App) SyncSignIn(email, password string) error {
+	return a.syncManager.SignIn(email, password)
+}
+
+// OpenProjectInIDE opens the current working directory in the configured IDE
+func (a *App) OpenProjectInIDE() error {
+	// 1. Get Configured IDE
+	target := a.config.Get().TargetIDE
+	if target == "" {
+		target = "cursor" // Default to Cursor if not set? Or vscode.
+	}
+
+	// 2. Get Current Working Directory (Project Root)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// 3. Open
+	opener := ide.NewOpener()
+	return opener.Open(target, cwd, 0)
+}
+
+// SyncGetUser returns current user ID
+func (a *App) SyncGetUser() string {
+	return a.syncManager.GetUser()
 }

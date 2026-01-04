@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
+	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
 	"gorm.io/gorm"
@@ -14,15 +16,17 @@ type Service struct {
 	db        *gorm.DB
 	process   *process.Service
 	injector  *injection.Service
+	config    *config.Manager
 	configDir string
 }
 
-func NewService(database *db.Database) *Service {
+func NewService(database *db.Database, cfg *config.Manager) *Service {
 	return &Service{
 		db:        database.Conn,
 		process:   process.NewService(),
 		injector:  injection.NewService(),
-		configDir: "", // Will be set if needed
+		config:    cfg,
+		configDir: cfg.ConfigDir(),
 	}
 }
 
@@ -34,36 +38,51 @@ func (s *Service) ActivateAccount(id uint) error {
 		return err
 	}
 
-	// 1. Decrypt credentials (happens automatically via Value(), but here we access the raw string from Scanner?
-	// Actually EncryptedString has Value() for DB write, and Scan() for DB read.
-	// Verify: When we read `acc`, `acc.Password` is already the `EncryptedString` type,
-	// but the underlying string (if we cast it) is the decrypted value?
-	// Wait, EncryptedString is `string` type alias.
-	// db.go implementation: Scan() decrypts bytes -> string. So `acc.Password` holds DECRYPTED string.
-	// Correct.
+	// 1. Resolve IDE Profile
+	cfg := s.config.Get()
+	targetIDE := cfg.TargetIDE
+	if targetIDE == "" {
+		targetIDE = "vscode" // Default fallback
+	}
+
+	profile, err := ide.GetProfile(targetIDE)
+	if err != nil {
+		return fmt.Errorf("failed to get IDE profile for '%s': %w", targetIDE, err)
+	}
+
+	fmt.Printf("[Account] Activating for IDE: %s (Process: %s)\n", profile.Name, profile.ProcessName)
 
 	// 2. Kill Target Process
-	// Hardcoded for now, move to config later
-	targetApp := "Code Helper"
-	if err := s.process.Kill(targetApp); err != nil {
-		return fmt.Errorf("failed to kill process: %w", err)
+	if err := s.process.Kill(profile.ProcessName); err != nil {
+		return fmt.Errorf("failed to kill process %s: %w", profile.ProcessName, err)
 	}
 
-	// 3. Inject Token
-	// Hardcoded path for now
-	targetDB := "/Users/r2d2/Library/Application Support/Code/User/globalStorage/state.vscdb"
-
-	// Use Password as Access Token for MVP/Demo purposes since we don't have separate token fields yet
-	// In real world, we'd use SessionToken or specific fields
-	err := s.injector.Inject(targetDB, string(acc.Password), string(acc.SessionToken), time.Now().Add(1*time.Hour))
+	// 3. Resolve DB Path
+	dbPath, err := profile.GetDBPath()
 	if err != nil {
-		return fmt.Errorf("failed to inject: %w", err)
+		return fmt.Errorf("failed to resolve DB path: %w", err)
 	}
 
-	// 4. Start Process
-	if err := s.process.Start(targetApp); err != nil {
-		return fmt.Errorf("failed to start process: %w", err)
+	// 4. Inject Token
+	// Using Password as Access Token (MVP)
+	err = s.injector.Inject(dbPath, string(acc.Password), string(acc.SessionToken), time.Now().Add(1*time.Hour))
+	if err != nil {
+		return fmt.Errorf("failed to inject into %s: %w", dbPath, err)
 	}
+
+	// 5. Start Process
+	// We can't strictly "Start" the app easily from binary path across all OSes consistently without knowing where the App bundle is.
+	// IdeProfile doesn't store App Path yet.
+	// For now, we only Kill. Starting usually requires user to click the icon, specifically for "Code Helper" which is a background process of VS Code.
+	// VS Code relaunch is tricky programmatically (`code .` works if in PATH).
+	// Let's try to start if we know the path, otherwise just log instructions.
+	// Since we don't store App Path in Profile yet, we'll keep the process.Start generic logic or skip it.
+	// "Code Helper" is internal. We usually want to start the Main App?
+	// The original code tried: s.process.Start(targetApp).
+	// If targetApp was "Code Helper", that likely failed or started a helper.
+	// Let's Skip Auto-Start for now (Wait for user action) OR simple `open -a "Visual Studio Code"` on Mac.
+	// Let's leave Start empty or commented out for safety until we add AppPath to Profile.
+	fmt.Println("[Account] Please restart your IDE manually if it doesn't open.")
 
 	return nil
 }

@@ -107,6 +107,29 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
+            {/* Target IDE */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Target IDE</CardTitle>
+                    <CardDescription>Select which IDE you are using (VS Code, Cursor, Windsurf)</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <Label>Current IDE</Label>
+                        <select
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[200px]"
+                            // @ts-ignore
+                            value={config.target_ide || "vscode"}
+                            onChange={(e) => handleConfigChange("target_ide", e.target.value)}
+                        >
+                            <option value="vscode">VS Code</option>
+                            <option value="cursor">Cursor</option>
+                            <option value="windsurf">Windsurf</option>
+                        </select>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* HTTPS Inspection */}
             <Card>
                 <CardHeader>

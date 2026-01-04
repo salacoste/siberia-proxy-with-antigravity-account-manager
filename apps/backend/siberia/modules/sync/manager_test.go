@@ -31,6 +31,18 @@ func (m *MockProvider) Pull() (string, error) {
 	return m.PullData, nil
 }
 
+func (m *MockProvider) SignUp(email, password string) error {
+	return nil
+}
+
+func (m *MockProvider) SignIn(email, password string) error {
+	return nil
+}
+
+func (m *MockProvider) GetUser() string {
+	return "test-user"
+}
+
 func TestManager_Push(t *testing.T) {
 	mock := &MockProvider{}
 	m := NewManager(mock)

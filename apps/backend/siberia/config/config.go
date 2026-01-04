@@ -18,6 +18,7 @@ type AppConfig struct {
 	DbSync          bool   `json:"db_sync"`
 	ProxyPort       int    `json:"proxy_port"`
 	UpstreamProxy   string `json:"upstream_proxy"`
+	TargetIDE       string `json:"target_ide"` // "vscode", "cursor", "windsurf"
 
 	// z.ai Provider
 	ZaiEnabled bool   `json:"zai_enabled"`
@@ -58,6 +59,7 @@ func NewManager() (*Manager, error) {
 			DbSync:          true,
 			ProxyPort:       3000,
 			UpstreamProxy:   "",
+			TargetIDE:       "vscode", // Default
 			ZaiEnabled:      false,
 			ZaiBaseURL:      "https://api.z.ai/v1",
 			ZaiApiKey:       "",

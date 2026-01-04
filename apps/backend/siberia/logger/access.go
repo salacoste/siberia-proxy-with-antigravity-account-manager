@@ -33,24 +33,18 @@ func InitAccessLogger(configDir string) {
 	}
 }
 
-// LogAccess writes an entry to the access log asynchronously
+// LogAccess writes an entry to the access log.
+// It is safely called from the TelemetryWorker so it doesn't need its own goroutine per request.
 func LogAccess(entry AccessEntry) {
 	if accessLogger == nil {
 		return
 	}
 
-	// Non-blocking attempt?
-	// For simplicity in this non-high-throughput desktop app, we'll write directly.
-	// Lumberjack writes are synchronized but fast enough for local proxy usage.
-	// If performance becomes an issue, we can buffer with a channel.
-
-	go func() {
-		data, err := json.Marshal(entry)
-		if err != nil {
-			return
-		}
-		// Append newline
-		data = append(data, '\n')
-		accessLogger.Write(data)
-	}()
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return
+	}
+	// Append newline
+	data = append(data, '\n')
+	accessLogger.Write(data)
 }

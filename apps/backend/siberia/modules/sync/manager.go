@@ -12,6 +12,9 @@ import (
 type CloudProvider interface {
 	Push(data string) error
 	Pull() (string, error)
+	SignUp(email, password string) error
+	SignIn(email, password string) error
+	GetUser() string
 }
 
 // SyncPayload represents the data exchanged with the cloud
@@ -72,4 +75,19 @@ func (m *Manager) Pull(profileID string) (*SyncPayload, error) {
 // ResolveConflict implements LWW (Last Write Wins)
 func (m *Manager) ResolveConflict(localTime, remoteTime int64) bool {
 	return localTime > remoteTime
+}
+
+// SignUp registers a new user
+func (m *Manager) SignUp(email, password string) error {
+	return m.provider.SignUp(email, password)
+}
+
+// SignIn logs in an existing user
+func (m *Manager) SignIn(email, password string) error {
+	return m.provider.SignIn(email, password)
+}
+
+// GetUser returns the current user ID
+func (m *Manager) GetUser() string {
+	return m.provider.GetUser()
 }

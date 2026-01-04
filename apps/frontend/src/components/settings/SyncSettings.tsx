@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw, UploadCloud, DownloadCloud, Lock, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCw, UploadCloud, DownloadCloud, Lock, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Type definition for the window object to include the Go backend
@@ -14,6 +15,9 @@ declare global {
                 App: {
                     SyncPush: (password: string) => Promise<void>;
                     SyncPull: (password: string) => Promise<string>;
+                    SyncSignUp: (email: string, password: string) => Promise<void>;
+                    SyncSignIn: (email: string, password: string) => Promise<void>;
+                    SyncGetUser: () => Promise<string>;
                 }
             }
         }
@@ -24,6 +28,44 @@ export function SyncSettings() {
     const [password, setPassword] = useState("");
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSync, setLastSync] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string>("");
+
+    // Auth State
+    const [email, setEmail] = useState("");
+    const [authPassword, setAuthPassword] = useState("");
+
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
+    const checkAuth = async () => {
+        try {
+            const id = await window.go.main.App.SyncGetUser();
+            setUserId(id);
+        } catch (e) {
+            console.log("Not logged in");
+        }
+    };
+
+    const handleLogin = async () => {
+        try {
+            await window.go.main.App.SyncSignIn(email, authPassword);
+            toast.success("Logged in successfully");
+            checkAuth();
+        } catch (e: any) {
+            toast.error("Login failed: " + e);
+        }
+    };
+
+    const handleSignup = async () => {
+        try {
+            await window.go.main.App.SyncSignUp(email, authPassword);
+            toast.success("Account created! You are now logged in.");
+            checkAuth();
+        } catch (e: any) {
+            toast.error("Signup failed: " + e);
+        }
+    };
 
     const handlePush = async () => {
         if (!password) {
@@ -64,6 +106,53 @@ export function SyncSettings() {
         }
     };
 
+    if (!userId) {
+        return (
+            <Card className="w-full max-w-md mx-auto mt-6">
+                <CardHeader>
+                    <CardTitle>Cloud Sync Login</CardTitle>
+                    <CardDescription>Sign in to sync your profiles across devices.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="login" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="login">Login</TabsTrigger>
+                            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="login" className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Password</Label>
+                                <Input value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} type="password" />
+                            </div>
+                            <Button className="w-full" onClick={handleLogin}>
+                                <LogIn className="mr-2 h-4 w-4" /> Sign In
+                            </Button>
+                        </TabsContent>
+
+                        <TabsContent value="signup" className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Password</Label>
+                                <Input value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} type="password" />
+                            </div>
+                            <Button className="w-full" onClick={handleSignup}>
+                                <UserPlus className="mr-2 h-4 w-4" /> Create Account
+                            </Button>
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <Card className="w-full max-w-2xl mx-auto mt-6">
             <CardHeader>
@@ -77,6 +166,19 @@ export function SyncSettings() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-green-500/10 border-green-500/20">
+                    <div className="flex items-center gap-3">
+                        <ShieldCheck className="h-5 w-5 text-green-600" />
+                        <div className="flex flex-col">
+                            <span className="font-medium text-sm text-green-700">Authenticated</span>
+                            <span className="text-xs text-green-600/80">User ID: {userId.slice(0, 8)}...</span>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setUserId("")} className="text-xs">
+                        Logout
+                    </Button>
+                </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="master-password">Master Password (Encryption Key)</Label>
@@ -136,8 +238,8 @@ export function SyncSettings() {
 
             </CardContent>
             <CardFooter className="bg-muted/10 p-4 rounded-b-lg border-t text-xs text-muted-foreground flex items-center gap-2">
-                <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                <span>MVP Warning: "Mock Login" is active. Conflict resolution is strictly "Server Wins".</span>
+                <ShieldCheck className="h-3 w-3 text-green-500" />
+                <span>End-to-End Encrypted. The server cannot see your data.</span>
             </CardFooter>
         </Card>
     );

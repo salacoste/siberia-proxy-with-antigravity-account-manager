@@ -1,0 +1,15 @@
+decision: PASS
+story: story-39-real-cloud-backend
+epic: epic-13
+timestamp: 2026-01-04
+analyst: Quinn (QA)
+metrics:
+  security: PASS (Auth token/User ID used for RLS)
+  usability: PASS (Login/Signup flows added)
+  completeness: PASS (Replaces mock logic)
+risks:
+  - risk: "Session Persistence"
+    mitigation: "MVP requires re-login on restart. Session persistence deferred to Story-XX."
+notes: |
+  Successful migration from Mock Auth to Real Supabase Auth.
+recommended_action: Merge to main

@@ -1,0 +1,15 @@
+qa_gate:
+  id: epic-12.story-37-ide-support
+  status: PASS
+  date: 2026-01-04
+  reviewer: antigravity
+  checks:
+    - name: "Backend Build"
+      status: PASS
+      details: "go build successful"
+    - name: "Frontend Build"
+      status: PASS
+      details: "npm run build successful (Bindings verified)"
+    - name: "URI Scheme Logic"
+      status: PASS
+      details: "Checked opener.go logic for macos/cursor"

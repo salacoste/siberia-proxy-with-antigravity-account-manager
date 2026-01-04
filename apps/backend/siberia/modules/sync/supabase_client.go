@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -17,20 +18,23 @@ type CloudProfile struct {
 // SupabaseClient wraps the official client for our specific use case
 type SupabaseClient struct {
 	client *supabase.Client
-	userID string // For MVP, we might hardcode or pass this
+	userID string
 }
 
 // NewSupabaseClient creates a client using credentials
-func NewSupabaseClient(url, key, userID string) *SupabaseClient {
+func NewSupabaseClient(url, key string) *SupabaseClient {
 	return &SupabaseClient{
 		client: supabase.CreateClient(url, key),
-		userID: userID,
+		userID: "", // Starts unauthenticated
 	}
 }
 
 // Push uploads the encrypted blob to Supabase
 // For MVP, we use UPSERT (Insert or Update) based on UserID
 func (s *SupabaseClient) Push(encryptedData string) error {
+	if s.userID == "" {
+		return fmt.Errorf("not logged in")
+	}
 	profile := CloudProfile{
 		UserID:    s.userID,
 		DataBlob:  encryptedData,
@@ -50,6 +54,9 @@ func (s *SupabaseClient) Push(encryptedData string) error {
 
 // Pull downloads the encrypted blob from Supabase
 func (s *SupabaseClient) Pull() (string, error) {
+	if s.userID == "" {
+		return "", fmt.Errorf("not logged in")
+	}
 	var results []CloudProfile
 	// Select * from profiles where user_id = s.userID
 	err := s.client.DB.From("profiles").Select("*").Eq("user_id", s.userID).Execute(&results)
@@ -62,4 +69,37 @@ func (s *SupabaseClient) Pull() (string, error) {
 	}
 
 	return results[0].DataBlob, nil
+}
+
+// SignUp registers a new user
+func (s *SupabaseClient) SignUp(email, password string) error {
+	ctx := context.Background()
+	user, err := s.client.Auth.SignUp(ctx, supabase.UserCredentials{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return err
+	}
+	s.userID = user.ID
+	return nil
+}
+
+// SignIn logs in an existing user
+func (s *SupabaseClient) SignIn(email, password string) error {
+	ctx := context.Background()
+	user, err := s.client.Auth.SignIn(ctx, supabase.UserCredentials{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return err
+	}
+	s.userID = user.User.ID
+	return nil
+}
+
+// GetUser returns the current user ID or empty
+func (s *SupabaseClient) GetUser() string {
+	return s.userID
 }

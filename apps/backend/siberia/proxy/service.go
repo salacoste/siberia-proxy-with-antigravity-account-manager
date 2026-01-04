@@ -15,7 +15,6 @@ import (
 	"github.com/elazarl/goproxy"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
-	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -27,7 +26,9 @@ type Service struct {
 	ctx               context.Context
 	CaptureBody       bool
 	BreakpointManager *BreakpointManager
+	TelemetryManager  *TelemetryManager
 	mu                sync.RWMutex
+	SkipWailsEvents   bool // For testing
 }
 
 type ProxyRequestEvent struct {
@@ -53,6 +54,7 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service) *Service {
 		caService:         caSvc,
 		CaptureBody:       true,
 		BreakpointManager: NewBreakpointManager(),
+		TelemetryManager:  NewTelemetryManager(1000), // Buffer 1000 events
 	}
 
 	// Configure MitM if enabled
@@ -269,19 +271,11 @@ func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start ti
 		RespBody:    respBody,
 	}
 
-	runtime.EventsEmit(s.ctx, "proxy:log", event)
-
-	// Also log to disk (minimal version)
-	logger.LogAccess(logger.AccessEntry{
-		Time:       event.Time,
-		Timestamp:  start.Unix(),
-		Method:     event.Method,
-		URL:        event.URL,
-		Status:     status,
-		DurationMs: duration,
-		Size:       size,
-	})
+	// Non-blocking Emit via Manager
+	s.TelemetryManager.Emit(event)
 }
+
+// telemetryWorker removed. Replaced by TelemetryManager.
 
 // ServeHTTP wraps the goproxy handler to intercept "direct/reverse proxy" requests.
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -400,6 +394,14 @@ func (s *Service) Start(ctx context.Context) error {
 		s.proxy.Tr.Proxy = http.ProxyFromEnvironment
 	}
 
+	// Performance Tuning (Story-35)
+	// Optimize Transport for high concurrency
+	if s.proxy.Tr != nil {
+		s.proxy.Tr.MaxIdleConns = 1000
+		s.proxy.Tr.MaxIdleConnsPerHost = 100
+		s.proxy.Tr.IdleConnTimeout = 90 * time.Second
+	}
+
 	addr := fmt.Sprintf(":%d", s.config.ProxyPort)
 	s.server = &http.Server{
 		Addr:    addr,
@@ -418,11 +420,17 @@ func (s *Service) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Start Telemetry Worker (2 workers for parallel disk I/O)
+	s.TelemetryManager.Start(ctx, 2, s.SkipWailsEvents)
+
 	return nil
 }
 
 func (s *Service) Stop(ctx context.Context) error {
 	log.Println("[Proxy] Stopping...")
+	if s.TelemetryManager != nil {
+		s.TelemetryManager.Stop()
+	}
 	if s.server != nil {
 		return s.server.Shutdown(ctx)
 	}

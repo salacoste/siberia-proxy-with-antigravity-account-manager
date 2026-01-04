@@ -2,10 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Share2, Copy, Check } from "lucide-react";
+import { Share2, Copy, Check, Terminal } from "lucide-react";
 import { useState } from "react";
 // @ts-ignore
-import { UploadSession } from "../../../wailsjs/go/main/App";
+import { UploadSession, OpenProjectInIDE } from "../../../wailsjs/go/main/App";
 // @ts-ignore
 import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
 
@@ -94,6 +94,10 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                                     {sharing ? "Creating..." : "Share Session"}
                                 </Button>
                             )}
+                            <Button size="sm" variant="outline" onClick={() => OpenProjectInIDE()}>
+                                <Terminal className="mr-2 h-3 w-3" />
+                                Open Project
+                            </Button>
                         </div>
                     </div>
                 </DialogHeader>
