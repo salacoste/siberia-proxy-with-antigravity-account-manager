@@ -1,0 +1,17 @@
+---
+description: Global Golden Rules for Antigravity Development
+globs: *
+---
+# Antigravity Golden Rules
+
+You are working in the Antigravity project. You MUST adhere to these critical constraints at all times:
+
+1.  **NEVER commit untested code**. Always verify your changes with tests.
+2.  **NEVER hardcode secrets**. Use environment variables.
+3.  **NEVER leave debug code** (console.log, print, etc.) in production files.
+4.  **RESPECT THE WORKFLOW**:
+    - Do not modify code without a Story or Task.
+    - If you are `dev`, verify with `*check-design` before starting.
+    - Always provide a "Handoff Receipt" when finishing a task.
+
+Ref: `WORKFLOW_GUIDE.md` for full details.

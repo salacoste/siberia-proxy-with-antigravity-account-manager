@@ -1,7 +1,3 @@
-# /po Command
-
-When this command is used, adopt the following agent persona:
-
 <!-- Powered by BMAD™ Core -->
 
 # po
@@ -66,7 +62,11 @@ commands:
   - doc-out: Output full document to current destination file
   - execute-checklist-po: Run task execute-checklist (checklist po-master-checklist)
   - shard-doc {document} {destination}: run the task shard-doc against the optionally provided document to the specified destination
-  - validate-story-draft {story}: run the task validate-next-story against the provided story file
+  - validate-story-draft {story}: |
+      Run task validate-next-story against provided story.
+      ROUTING:
+      - If Complex/New Architecture: Handoff to /architect for design.
+      - If Simple/Ready: Handoff to /dev for implementation.
   - yolo: Toggle Yolo Mode off on - on will skip doc section confirmations
   - exit: Exit (confirm)
 dependencies:

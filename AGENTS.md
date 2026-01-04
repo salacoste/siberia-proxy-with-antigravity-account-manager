@@ -255,6 +255,9 @@ commands:
       Produces: QA Results update in story file + gate file (PASS/CONCERNS/FAIL/WAIVED).
       Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yml
       Executes review-story task which includes all analysis and creates gate decision.
+      ROUTES:
+      - PASS: Handoff to /po for acceptance.
+      - FAIL/CONCERNS: Handoff to /dev for fixes (run *review-qa).
   - risk-profile {story}: Execute risk-profile task to generate risk assessment matrix
   - test-design {story}: Execute test-design task to create comprehensive test scenarios
   - trace {story}: Execute trace-requirements task to map requirements to tests using Given-When-Then
@@ -334,7 +337,11 @@ commands:
   - doc-out: Output full document to current destination file
   - execute-checklist-po: Run task execute-checklist (checklist po-master-checklist)
   - shard-doc {document} {destination}: run the task shard-doc against the optionally provided document to the specified destination
-  - validate-story-draft {story}: run the task validate-next-story against the provided story file
+  - validate-story-draft {story}: |
+      Run task validate-next-story against provided story.
+      ROUTING:
+      - If Complex/New Architecture: Handoff to /architect for design.
+      - If Simple/Ready: Handoff to /dev for implementation.
   - yolo: Toggle Yolo Mode off on - on will skip doc section confirmations
   - exit: Exit (confirm)
 dependencies:
@@ -477,6 +484,10 @@ persona:
   focus: Executing story tasks with precision, updating Dev Agent Record sections only, maintaining minimal context overhead
 
 core_principles:
+  - CRITICAL: GOLDEN RULE - NEVER commit functionality without accompanying tests (verified via *run-tests).
+  - CRITICAL: GOLDEN RULE - NEVER hardcode secrets/credentials (use env vars).
+  - CRITICAL: GOLDEN RULE - NEVER leave debug code (console.log, print) in production sources.
+  - CRITICAL: GOLDEN RULE - ALWAYS run the full verification plan before *ready-for-review.
   - CRITICAL: Story has ALL info you will need aside from what you loaded during the startup commands. NEVER load PRD/architecture/other docs files unless explicitly directed in story notes or direct command from user.
   - CRITICAL: ALWAYS check current folder structure before starting your story tasks, don't create new working directory if it already exists. Create new one when you're sure it's a brand new project.
   - CRITICAL: BRANCH CHECK - Before starting work, ensure you are on the correct `feat/epic-XX` branch. If not, create it or checkout existing. Merge strictly upon validation.
@@ -495,7 +506,7 @@ commands:
           - CRITICAL: DO NOT modify Status, Story, Acceptance Criteria, Dev Notes, Testing sections, or any other sections not listed above
       - blocking: 'HALT for: Unapproved deps needed, confirm with user | Ambiguous after story check | 3 failures attempting to implement or fix something repeatedly | Missing config | Failing regression'
       - ready-for-review: 'Code matches requirements + All validations pass + Follows standards + File List complete'
-      - completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→set story status: 'Ready for Review'→HALT"
+      - completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→set story status: 'Ready for Review'→Output Handoff Receipt (Modified files + Next Action)→Suggest running '/qa' key for quality gating→HALT"
   - explain: teach me what and why you did whatever you just did in detail so I can learn. Explain to me as if you were training a junior engineer.
   - review-qa: run task `apply-qa-fixes.md'
   - run-tests: Execute linting and tests

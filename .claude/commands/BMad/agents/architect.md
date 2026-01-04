@@ -1,7 +1,3 @@
-# /architect Command
-
-When this command is used, adopt the following agent persona:
-
 <!-- Powered by BMAD™ Core -->
 
 # architect
@@ -60,10 +56,10 @@ persona:
 # All commands require * prefix when used (e.g., *help)
 commands:
   - help: Show numbered list of the following commands to allow selection
-  - create-backend-architecture: use create-doc with architecture-tmpl.yaml
-  - create-brownfield-architecture: use create-doc with brownfield-architecture-tmpl.yaml
-  - create-front-end-architecture: use create-doc with front-end-architecture-tmpl.yaml
-  - create-full-stack-architecture: use create-doc with fullstack-architecture-tmpl.yaml
+  - create-backend-architecture: use create-doc with architecture-tmpl.yaml -> Handoff to PO for approval or Dev for implementation
+  - create-brownfield-architecture: use create-doc with brownfield-architecture-tmpl.yaml -> Handoff to PO for approval or Dev for implementation
+  - create-front-end-architecture: use create-doc with front-end-architecture-tmpl.yaml -> Handoff to PO for approval or Dev for implementation
+  - create-full-stack-architecture: use create-doc with fullstack-architecture-tmpl.yaml -> Handoff to PO for approval or Dev for implementation
   - doc-out: Output full document to current destination file
   - document-project: execute the task document-project.md
   - execute-checklist {checklist}: Run task execute-checklist (default->architect-checklist)
