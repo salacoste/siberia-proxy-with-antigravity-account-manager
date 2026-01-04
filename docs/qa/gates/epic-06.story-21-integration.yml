@@ -1,10 +1,32 @@
+# <!-- Powered by BMAD™ Core -->
+template:
+  id: qa-gate-template-v1
+  name: Quality Gate Decision
+  version: 1.0
+  output:
+    format: yaml
+    filename: docs/qa/gates/epic-06.story-21-integration.yml
+    title: "Quality Gate: Epic-06.Story-21"
+
+# Required fields
 schema: 1
-story: 'epic-06.story-21'
-story_title: 'Integration & Verification'
-gate: PASS
-status_reason: 'Orchestration flow correctly wired in Accounts Service.'
-reviewer: 'Quinn (Test Architect)'
-updated: '2026-01-03T21:20:00Z'
-top_issues: []
+story: "Epic-06.Story-21"
+story_title: "Integration & Verification"
+gate: "PASS"
+status_reason: "Feature verified end-to-end. Frontend correctly triggers backend orchestration. Process termination logic matches requirements, and token injection into VS Code SQLite DB is confirmed by logs."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-04T11:06:00+03:00"
+
+# Waiver (Inactive)
 waiver: { active: false }
-quality_score: 100
+
+# Issues
+top_issues: []
+
+# Risk Summary
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 0, low: 0 }
+  recommendations:
+    must_fix: []
+    monitor:
+      - "Monitor VS Code process name variations on different OS versions (currently hardcoded for macOS)"
