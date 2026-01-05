@@ -11,33 +11,37 @@
 
 ### Story-25: Certificate Authority Management (Backend)
 *   **Goal:** Generate and manage a persistent Root CA (cert + key).
+*   **Status:** Completed
 *   **Tasks:**
-    *   Create `siberia/ca` module.
-    *   Check for existing `ca.pem` / `ca.key` in app data.
-    *   If missing, generate a new RSA/ECDSA Root CA with a friendly name (e.g., "Siberia Proxy CA").
-    *   Expose method to get CA path.
+    *   [x] Create `siberia/ca` module.
+    *   [x] Check for existing `ca.pem` / `ca.key` in app data.
+    *   [x] If missing, generate a new RSA/ECDSA Root CA with a friendly name (e.g., "Siberia Proxy CA").
+    *   [x] Expose method to get CA path.
 
 ### Story-26: Trusted Cert Installation (Backend/OS)
 *   **Goal:** Automate the installation of the Root CA into the OS Trust Store.
+*   **Status:** Completed
 *   **Tasks:**
-    *   Implement `InstallCert()` for macOS (using `security add-trusted-cert`).
-    *   (Optional MVP) Linux/Windows support (start with manual instructions or `certutil`).
-    *   Implement `CheckTrust()` to verify if already installed.
+    *   [x] Implement `InstallCert()` for macOS (using `security add-trusted-cert`).
+    *   [x] (Optional MVP) Linux/Windows support (start with manual instructions or `certutil`).
+    *   [x] Implement `CheckTrust()` to verify if already installed.
 
 ### Story-27: MitM Proxy Logic (Backend)
 *   **Goal:** Enable MitM in `proxy` service.
+*   **Status:** Completed
 *   **Tasks:**
-    *   Configure `goproxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)`.
-    *   Set `goproxy.MitmConnect` handler to sign certs using our CA.
-    *   Add a config toggle `MitmEnabled` (default false for safety/performance).
+    *   [x] Configure `goproxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)`.
+    *   [x] Set `goproxy.MitmConnect` handler to sign certs using our CA.
+    *   [x] Add a config toggle `MitmEnabled` (default false for safety/performance).
 
 ### Story-28: Trust UI (Frontend)
 *   **Goal:** Allow user to install/verify the certificate from Settings.
+*   **Status:** Completed
 *   **Tasks:**
-    *   Add "HTTPS Inspection" section to `SettingsPage`.
-    *   Show status: "Certificate Not Installed" / "Trusted".
-    *   Button: "Install Certificate" (triggers backend `InstallCert`, might prompt generic OS password dialog).
-    *   Toggle: "Enable Decryption".
+    *   [x] Add "HTTPS Inspection" section to `SettingsPage`.
+    *   [x] Show status: "Certificate Not Installed" / "Trusted".
+    *   [x] Button: "Install Certificate" (triggers backend `InstallCert`, might prompt generic OS password dialog).
+    *   [x] Toggle: "Enable Decryption".
 
 ## Risks
 *   **Security:** CA Key must be readable only by the app.
