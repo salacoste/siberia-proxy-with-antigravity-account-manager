@@ -1,7 +1,8 @@
 # Story-39: Proxy Code Snippets (DevTools)
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Ready
+**Status:** Released
+
 **Reference:** `docs/ag-ref-docs/feature-frontend.md`
 
 ## Goal

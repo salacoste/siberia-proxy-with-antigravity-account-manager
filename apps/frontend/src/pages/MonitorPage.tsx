@@ -31,9 +31,12 @@ export default function MonitorPage() {
     const [rules, setRules] = useState<proxy.BreakpointRule[]>([]);
 
     useEffect(() => {
-        GetBreakpointRules().then((fetched: proxy.BreakpointRule[]) => {
-            if (fetched) setRules(fetched);
-        });
+        // @ts-ignore
+        if (window.go) {
+            GetBreakpointRules().then((fetched: proxy.BreakpointRule[]) => {
+                if (fetched) setRules(fetched);
+            });
+        }
     }, []);
 
     // WebSocket State

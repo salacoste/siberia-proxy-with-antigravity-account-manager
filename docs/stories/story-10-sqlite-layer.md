@@ -1,7 +1,8 @@
 # Story-10: Implement SQLite Database Layer (Encryption)
 
 **Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Draft
+**Status:** Released
+
 
 ## Goal
 Establish the local database layer for storing Account entities. The database must be embedded (SQLite) and support field-level encryption for sensitive data (tokens, passwords).
