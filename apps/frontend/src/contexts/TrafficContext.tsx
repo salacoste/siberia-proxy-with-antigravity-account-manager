@@ -13,6 +13,7 @@ export interface ProxyEvent {
     resp_headers: Record<string, string>;
     req_body: string;
     resp_body: string;
+    connection_id: string;
 }
 
 interface TrafficContextType {

@@ -112,6 +112,16 @@ func (bm *BreakpointManager) ShouldPause(req *http.Request) bool {
 	return false
 }
 
+// GetRules returns a copy of current rules safely
+func (bm *BreakpointManager) GetRules() []BreakpointRule {
+	bm.mu.RLock()
+	defer bm.mu.RUnlock()
+	// Return a copy to avoid race conditions if caller modifies slice
+	rules := make([]BreakpointRule, len(bm.Rules))
+	copy(rules, bm.Rules)
+	return rules
+}
+
 // PauseRequest blocks execution until Resumed.
 // It broadcasts the event to Frontend.
 func (bm *BreakpointManager) PauseRequest(req *http.Request, reqBody string) (ModifiedRequest, bool) {

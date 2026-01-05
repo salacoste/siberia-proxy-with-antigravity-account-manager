@@ -284,6 +284,11 @@ func (a *App) DeleteBreakpointRule(id string) {
 	a.proxyService.BreakpointManager.DeleteRule(id)
 }
 
+// GetBreakpointRules returns all active breakpoint rules
+func (a *App) GetBreakpointRules() []proxy.BreakpointRule {
+	return a.proxyService.BreakpointManager.GetRules()
+}
+
 // ResumeRequest resumes a paused request
 func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 	return a.proxyService.BreakpointManager.ResumeRequest(id, mod)

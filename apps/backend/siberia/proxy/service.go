@@ -3,9 +3,11 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,11 +15,11 @@ import (
 	"time"
 
 	"github.com/elazarl/goproxy"
+	"github.com/google/uuid"
 	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/types"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Service struct {
@@ -53,10 +55,50 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 		if err == nil {
 			proxy.OnRequest().HandleConnect(goproxy.FuncHttpsHandler(func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
 				if svc.config.MitmEnabled {
-					return goproxy.MitmConnect, host
+					// Use ConnectHijack to fully control the Tunnel
+					return &goproxy.ConnectAction{
+						Action: goproxy.ConnectHijack,
+						Hijack: func(req *http.Request, clientConn net.Conn, ctx *goproxy.ProxyCtx) {
+							// 1. Send OK to Client to establish tunnel
+							clientConn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+
+							// 2. Wrap in TLS Server
+							// We need to generate a cert for the host?
+							// goproxy's logic normally handles this dynamic cert generation.
+							// We can use goproxy.TLSConfigFromCA to get a config that "Signs" on demand?
+							// correct. TLSConfigFromCA returns a func that generates certs.
+							conf, err := goproxy.TLSConfigFromCA(caPair)(host, ctx)
+							if err != nil {
+								log.Printf("[MitM] Failed to generate cert for %s: %v", host, err)
+								clientConn.Close()
+								return
+							}
+
+							tlsConn := tls.Server(clientConn, conf)
+
+							// 3. Serve via OUR Service handler (s)
+							// This routes the decrypted HTTP2/1.1 traffic back to s.ServeHTTP
+							// where we can intercept WebSockets and Log everything.
+							// We create a custom listener to serve this single connection?
+							// http.Serve serves on a listener.
+							// We can use a "SingleConnectionListener".
+
+							// Or simpler:
+							// http.Server{Handler: svc}.Serve(SingleConnListener{tlsConn})
+
+							// Define a throwaway listener
+							l := &singleConnListener{conn: tlsConn}
+							server := &http.Server{Handler: svc}
+							// Serve blocks until connection closes
+							server.Serve(l)
+						},
+					}, host
 				}
 				return goproxy.OkConnect, host
 			}))
+
+			// Remove erroneous assignment
+			// proxy.MitmHandler = svc
 
 			goproxy.GoproxyCa = *caPair
 			goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: goproxy.TLSConfigFromCA(caPair)}
@@ -87,7 +129,11 @@ func (w *captureResponseWriter) WriteHeader(code int) {
 
 func (s *Service) registerHandlers() {
 	s.proxy.OnRequest().DoFunc(func(r *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-		ctx.UserData = map[string]interface{}{"start": time.Now()}
+		connID := uuid.New().String()
+		ctx.UserData = map[string]interface{}{
+			"start":  time.Now(),
+			"connID": connID,
+		}
 
 		// Capture Request Body if enabled or if Breakpoint logic needs it
 		var reqBody string
@@ -100,51 +146,6 @@ func (s *Service) registerHandlers() {
 			if data, ok := ctx.UserData.(map[string]interface{}); ok {
 				data["reqBody"] = string(truncate(bodyBytes, 4096))
 			}
-		}
-
-		// === WebSocket Interception ===
-		if strings.ToLower(r.Header.Get("Upgrade")) == "websocket" && strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
-			// Signal that we are hijacking this request
-			// We return a custom response that we can hijack in the OnResponse?
-			// No, goproxy structure usually handles Hijack in OnRequest by returning a response with status?
-
-			// Actually, if we return a response here, goproxy stops and sends that response.
-			// But we want to TAKE OVER the connection.
-
-			// Trick: goproxy doesn't easily let us hijack inside the middleware without returning a response.
-			// If we return a response, goproxy writes it to the client.
-			// We want to handle the whole tunnel.
-
-			// We can use a custom handler.
-			// But since we are here:
-			// Let's create a custom response that is basically "Go Ahead" but we hijack first?
-			// No, standard goproxy usage for WS is to let it pass through (Tunnel).
-			// If we want to inspect, we MUST MitM.
-
-			// Since we are already MitM (because we are in OnRequest of headers),
-			// we can actually just proceed, BUT goproxy by default will handle the tunnel opaque.
-
-			// To inspect, we need to replace the connection handling.
-			// Currently, we can't easily replace the "Do" logic of goproxy itself.
-			// However... `goproxy.Hijack` exists?
-
-			// Revert to Logging Only for MVP if this complex?
-			// User wants story-32.
-
-			// Let's try to let the request pass, but log that we saw it.
-			// Inspecting the *frames* on a standard goproxy HTTPS MitM is hard because goproxy handles the read/write copy loop.
-
-			// Just Log it for now to prove detection.
-			runtime.EventsEmit(s.ctx, "proxy:log", types.ProxyRequestEvent{
-				Method: "WEBSOCKET",
-				URL:    r.URL.String(),
-				Status: 101,
-				Time:   time.Now().Format("15:04:05"),
-				ReqHeaders: map[string]string{
-					"Info": "WebSocket tunnel established (Inspection pending)",
-				},
-			})
-			return r, nil
 		}
 
 		// === Breakpoint Logic ===
@@ -210,7 +211,13 @@ func (s *Service) registerHandlers() {
 
 		// Emit Log
 		if resp != nil {
-			s.emitFullEvent(resp.Request, resp, start, reqBody, respBody)
+			connID := ""
+			if data, ok := ctx.UserData.(map[string]interface{}); ok {
+				if id, ok := data["connID"].(string); ok {
+					connID = id
+				}
+			}
+			s.emitFullEvent(resp.Request, resp, start, reqBody, respBody, connID)
 		}
 		return resp
 	})
@@ -223,7 +230,7 @@ func truncate(b []byte, n int) []byte {
 	return b
 }
 
-func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start time.Time, reqBody, respBody string) {
+func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start time.Time, reqBody, respBody, connID string) {
 	if s.ctx == nil {
 		return
 	}
@@ -249,16 +256,17 @@ func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start ti
 	}
 
 	event := types.ProxyRequestEvent{
-		Method:      req.Method,
-		URL:         req.URL.String(),
-		Status:      status,
-		Duration:    duration,
-		Time:        start.Format("15:04:05"),
-		Size:        size,
-		ReqHeaders:  reqHeaders,
-		RespHeaders: respHeaders,
-		ReqBody:     reqBody,
-		RespBody:    respBody,
+		Method:       req.Method,
+		URL:          req.URL.String(),
+		Status:       status,
+		Duration:     duration,
+		Time:         start.Format("15:04:05"),
+		Size:         size,
+		ReqHeaders:   reqHeaders,
+		RespHeaders:  respHeaders,
+		ReqBody:      reqBody,
+		RespBody:     respBody,
+		ConnectionID: connID,
 	}
 
 	// Non-blocking Emit via Manager
@@ -301,6 +309,47 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.handleZaiForward(rw, r)
 			return
 		}
+	}
+
+	// 1.5 WebSocket Interception
+	// This works for:
+	// - Plain HTTP (port 80) directed here
+	// - HTTPS (port 443) which was intercepted by HandleConnect -> proxy.MitmHandler -> THIS function.
+	if strings.ToLower(r.Header.Get("Upgrade")) == "websocket" && strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
+		// Log
+		log.Printf("[WS] Intercepting WebSocket upgrade for: %s", r.URL.String())
+
+		// Generate a connID for this WS session if not present (handled by middleware usually, but here we might be outside if direct ServeHTTP?)
+		// Actually, ServeHTTP is called by MitM or direct.
+		// If MitM, we don't have the ctx.UserData from the goproxy OnRequest chain because that chain hasn't happened yet for this request/response cycle if we are the handler?
+		// WAIT.
+		// MitM: HandleConnect -> Hijack -> server -> s.ServeHTTP.
+		// So this is a BRAND NEW HTTP Request from the perspective of our server.
+		// The goproxy request chain happens inside s.proxy.ServeHTTP (line 304).
+		// So we are "upstream" of s.proxy.ServeHTTP.
+		// Means we haven't hit OnRequest yet.
+		// So we must generate the ConnID here for WebSocket Tunnels that we intercept BEFORE goproxy.
+		connID := uuid.New().String()
+
+		HandleWebSocketTunnel(w, r, s.ctx, connID)
+
+		// Also emit the "Handshake Request" Log?
+		// We should emit a log that says "Switching Protocols".
+		// HandleWebSocketTunnel handles the tunnel. It does NOT emit the handshake event itself.
+		// We should emit it manually to show up in the table.
+
+		// Actually, let's keep it simple. We emit the initial request event.
+		s.emitFullEvent(r, &http.Response{
+			StatusCode: 101,
+			Header: http.Header{
+				"Upgrade":    []string{"websocket"},
+				"Connection": []string{"Upgrade"},
+			},
+			ContentLength: 0,
+			Request:       r,
+		}, time.Now(), "", "", connID)
+
+		return
 	}
 
 	// Track Active Connection (Request Scope)
@@ -373,7 +422,7 @@ func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
 	w.Write(bodyBytes)
 
 	// Manually emit event since we bypassed goproxy
-	s.emitFullEvent(r, resp, time.Now(), "[Z.AI Forward]", string(truncate(bodyBytes, 4096)))
+	s.emitFullEvent(r, resp, time.Now(), "[Z.AI Forward]", string(truncate(bodyBytes, 4096)), "zai-forward")
 }
 
 func (s *Service) Start(ctx context.Context) error {
@@ -431,4 +480,32 @@ func (s *Service) Stop(ctx context.Context) error {
 		return s.server.Shutdown(ctx)
 	}
 	return nil
+}
+
+// Helper for single connection serving
+type singleConnListener struct {
+	conn net.Conn
+	once sync.Once
+	done chan struct{}
+}
+
+func (l *singleConnListener) Accept() (net.Conn, error) {
+	// We only return the connection once
+	var c net.Conn
+	l.once.Do(func() {
+		c = l.conn
+	})
+	if c != nil {
+		return c, nil
+	}
+	// Block forever after
+	select {}
+}
+
+func (l *singleConnListener) Close() error {
+	return l.conn.Close()
+}
+
+func (l *singleConnListener) Addr() net.Addr {
+	return l.conn.LocalAddr()
 }

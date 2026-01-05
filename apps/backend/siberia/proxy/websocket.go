@@ -18,17 +18,18 @@ import (
 
 // WebSocketFrame represents a single WS message
 type WebSocketFrame struct {
-	ID        string `json:"id"`
-	Time      string `json:"time"`
-	Direction string `json:"direction"` // "outgoing" (Client->Server) or "incoming" (Server->Client)
-	OpCode    int    `json:"opcode"`    // 1=Text, 2=Binary, 8=Close, 9=Ping, 10=Pong
-	Payload   string `json:"payload"`
-	Length    int64  `json:"length"`
+	ID           string `json:"id"`
+	Time         string `json:"time"`
+	Direction    string `json:"direction"` // "outgoing" (Client->Server) or "incoming" (Server->Client)
+	OpCode       int    `json:"opcode"`    // 1=Text, 2=Binary, 8=Close, 9=Ping, 10=Pong
+	Payload      string `json:"payload"`
+	Length       int64  `json:"length"`
+	ConnectionID string `json:"connection_id"`
 }
 
 // HandleWebSocketTunnel performs the Man-in-the-Middle for WebSockets
 // It assumes it's called when `Upgrade: websocket` is detected.
-func HandleWebSocketTunnel(w http.ResponseWriter, r *http.Request, ctx context.Context) {
+func HandleWebSocketTunnel(w http.ResponseWriter, r *http.Request, ctx context.Context, connID string) {
 	// 1. Hijack Client Connection
 	hj, ok := w.(http.Hijacker)
 	if !ok {
@@ -89,15 +90,15 @@ func HandleWebSocketTunnel(w http.ResponseWriter, r *http.Request, ctx context.C
 
 	// Start Pipes
 	// Client -> Server
-	go pipeAndInspect(clientConn, targetConn, "outgoing", ctx)
+	go pipeAndInspect(clientConn, targetConn, "outgoing", ctx, connID)
 
 	// Server -> Client
 	// We pass clientBuf because hijacking might have buffered data?
 	// Actually for the first read validation we might stick to conn.
-	pipeAndInspect(targetConn, clientConn, "incoming", ctx)
+	pipeAndInspect(targetConn, clientConn, "incoming", ctx, connID)
 }
 
-func pipeAndInspect(src io.Reader, dst io.Writer, direction string, ctx context.Context) {
+func pipeAndInspect(src io.Reader, dst io.Writer, direction string, ctx context.Context, connID string) {
 	// We use a TeeReader? No, we need to parse frames which is stateful.
 	// Best approach: Read into buffer, Parse, Write to dst.
 
@@ -137,12 +138,13 @@ func pipeAndInspect(src io.Reader, dst io.Writer, direction string, ctx context.
 				}
 
 				runtime.EventsEmit(ctx, "proxy:ws:frame", WebSocketFrame{
-					ID:        uuid.New().String(),
-					Time:      time.Now().Format("15:04:05.000"),
-					Direction: direction,
-					OpCode:    opcode,
-					Payload:   msg,
-					Length:    int64(len(payload)),
+					ID:           uuid.New().String(),
+					Time:         time.Now().Format("15:04:05.000"),
+					Direction:    direction,
+					OpCode:       opcode,
+					Payload:      msg,
+					Length:       int64(len(payload)),
+					ConnectionID: connID,
 				})
 			}
 		}

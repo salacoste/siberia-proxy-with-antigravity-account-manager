@@ -11,6 +11,8 @@ import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
 import { Input } from "@/components/ui/input";
 import { DataViewer } from "./DataViewer";
 import { Separator } from "@/components/ui/separator";
+import { useTraffic } from "@/contexts/TrafficContext";
+import { WebSocketViewer } from "./WebSocketViewer";
 
 
 interface ProxyEvent {
@@ -24,6 +26,7 @@ interface ProxyEvent {
     resp_headers: Record<string, string>;
     req_body: string;
     resp_body: string;
+    connection_id: string; // Mandatory now
 }
 
 interface RequestDetailsProps {
@@ -36,6 +39,14 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [curlCopied, setCurlCopied] = useState(false);
+
+    // Get WS frames
+    const { wsFrames } = useTraffic();
+    const relevantFrames = event?.connection_id
+        ? wsFrames.filter(f => f.connection_id === event.connection_id)
+        : [];
+
+    const isWebSocket = event?.status === 101;
 
     // If no event, don't render anything (Sheet controls visibility via open prop)
     // But Sheet MUST be rendered to animate out? No, simple conditional is fine for now or keep generic.
@@ -158,6 +169,7 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="request">Request</TabsTrigger>
                             <TabsTrigger value="response">Response</TabsTrigger>
+                            {isWebSocket && <TabsTrigger value="frames">Frames ({relevantFrames.length})</TabsTrigger>}
                         </TabsList>
 
                         {/* REQUEST TAB */}
@@ -217,6 +229,13 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                                 </div>
                             </div>
                         </TabsContent>
+
+                        {/* FRAMES TAB (WebSocket) */}
+                        {isWebSocket && (
+                            <TabsContent value="frames" className="flex-1 flex flex-col overflow-hidden data-[state=active]:flex">
+                                <WebSocketViewer frames={relevantFrames} onClear={() => { }} />
+                            </TabsContent>
+                        )}
                     </Tabs>
                 )}
             </SheetContent>

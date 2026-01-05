@@ -8,7 +8,7 @@
 *   **WebSocket Inspection:** Decode and display WebSocket frames (text/binary) within the persistent connection.
 
 ## Stories
-*   [ ] **Story-29:** Implement Traffic Inspector UI (Headers/Body Viewer)
-*   [ ] **Story-30:** Implement Regex & Advanced Filtering Logic
-*   [ ] **Story-31:** Implement Request Breakpoint & Rewrite System
-*   [ ] **Story-32:** Implement WebSocket Frame Inspector
+*   [x] **Story-29:** Implement Traffic Inspector UI (Headers/Body Viewer)
+*   [x] **Story-30:** Implement Regex & Advanced Filtering Logic
+*   [x] **Story-31:** Implement Request Breakpoint & Rewrite System
+*   [x] **Story-32:** Implement WebSocket Frame Inspector

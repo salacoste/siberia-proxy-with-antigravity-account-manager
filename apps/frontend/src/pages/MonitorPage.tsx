@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Trash2, Pause, Play, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { WebSocketViewer } from "../components/monitor/WebSocketViewer";
 import { BreakpointPanel } from "../components/monitor/BreakpointPanel";
 import { PendingRequestDialog } from "../components/monitor/PendingRequestDialog";
@@ -10,65 +10,37 @@ import { RequestDetails } from "../components/monitor/RequestDetails";
 import { proxy } from "../../wailsjs/go/models";
 import { useTraffic, ProxyEvent } from '../contexts/TrafficContext';
 import { TrafficTable } from '../components/monitor/TrafficTable';
+import { GetBreakpointRules } from "../../wailsjs/go/main/App";
+
+import { FilterBar } from "@/components/monitor/FilterBar";
+import { filterEvent, FilterOptions } from "@/lib/filterUtils";
 
 export default function MonitorPage() {
     const { events, wsFrames, pendingReq, paused, setPaused, clearEvents, setPendingReq, addRule, addEvents } = useTraffic();
     const [selectedEvent, setSelectedEvent] = useState<ProxyEvent | null>(null);
 
-    const [filterQuery, setFilterQuery] = useState("");
+    const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+        query: "",
+        isRegex: false,
+        methods: [],
+        statusCategory: "All"
+    });
 
     // Breakpoint State (Still local for UI toggle, but rules could be global if needed)
     const [showBreakpoints, setShowBreakpoints] = useState(false);
     const [rules, setRules] = useState<proxy.BreakpointRule[]>([]);
 
+    useEffect(() => {
+        GetBreakpointRules().then((fetched: proxy.BreakpointRule[]) => {
+            if (fetched) setRules(fetched);
+        });
+    }, []);
+
     // WebSocket State
     const [showWs, setShowWs] = useState(false);
 
-    const filterEvent = (evt: ProxyEvent) => {
-        if (!filterQuery.trim()) return true;
-
-        try {
-            const terms = filterQuery.trim().split(/\s+/);
-            return terms.every(term => {
-                let checkTerm = term;
-                let isNegative = false;
-                if (checkTerm.startsWith('!') || (checkTerm.startsWith('-') && checkTerm.length > 1)) {
-                    isNegative = true;
-                    checkTerm = checkTerm.substring(1);
-                }
-
-                let match = false;
-                const lowerTerm = checkTerm.toLowerCase();
-
-                // Field filter?
-                if (checkTerm.includes(':')) {
-                    const [key, val] = checkTerm.split(':');
-                    const v = val.toLowerCase();
-                    if (key === 'method') match = evt.method.toLowerCase().includes(v);
-                    else if (key === 'status') match = evt.status.toString().startsWith(v);
-                    else if (key === 'url' || key === 'host') match = evt.url.toLowerCase().includes(v);
-                }
-                // Regex?
-                else if (checkTerm.startsWith('/') && checkTerm.endsWith('/') && checkTerm.length > 2) {
-                    try {
-                        const regex = new RegExp(checkTerm.slice(1, -1), 'i');
-                        match = regex.test(evt.url) || regex.test(evt.method);
-                    } catch { match = false; }
-                }
-                // Standard text
-                else {
-                    match = evt.url.toLowerCase().includes(lowerTerm) ||
-                        evt.method.toLowerCase().includes(lowerTerm) ||
-                        evt.status.toString().includes(lowerTerm);
-                }
-
-                return isNegative ? !match : match;
-            });
-        } catch { return true; }
-    };
-
     // Filter First, Then Virtualize
-    const filteredEvents = events.filter(filterEvent);
+    const filteredEvents = events.filter(evt => filterEvent(evt, filterOptions));
 
     // Dev: Simulate Load
     const simulateLoad = () => {
@@ -134,12 +106,7 @@ export default function MonitorPage() {
             )}
 
             <div className="flex gap-2">
-                <Input
-                    placeholder="Filter (e.g. method:POST /api/ status:404 !css)"
-                    value={filterQuery}
-                    onChange={(e) => setFilterQuery(e.target.value)}
-                    className="font-mono text-xs"
-                />
+                <FilterBar options={filterOptions} onChange={setFilterOptions} />
             </div>
 
             {/* Virtualized Table */}
