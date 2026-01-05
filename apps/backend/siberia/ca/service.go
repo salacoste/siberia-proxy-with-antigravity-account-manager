@@ -65,31 +65,41 @@ func (s *Service) EnsureCA() error {
 	certPath := s.GetCAPath()
 	keyPath := s.GetKeyPath()
 
-	if _, err := os.Stat(certPath); err == nil {
+	_, certErr := os.Stat(certPath)
+	_, keyErr := os.Stat(keyPath)
+
+	if certErr == nil && keyErr == nil {
 		// Verify we can load it
 		_, err := s.GetCAPair()
 		if err == nil {
 			return nil // Already exists and valid
 		}
 		// If load failed, regenerate
-		fmt.Println("CA load failed, regenerating...")
+		s.caCert = nil // Clear cache
+		fmt.Printf("CA load failed (%v), regenerating...\n", err)
 	}
 
 	return s.generateCA(certPath, keyPath)
 }
 
 func (s *Service) generateCA(certPath, keyPath string) error {
-	// Generate Key
+	// 1. Generate Key (RSA 2048)
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return fmt.Errorf("failed to generate private key: %w", err)
 	}
 
-	// Create Template
+	// 2. Create Template
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return fmt.Errorf("failed to generate serial number: %w", err)
+	}
+
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(1), // In production, use random serial
+		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Siberia"},
+			Organization: []string{"Siberia Proxy"},
 			CommonName:   "Siberia Proxy CA",
 		},
 		NotBefore: time.Now().Add(-1 * time.Minute),
@@ -101,31 +111,38 @@ func (s *Service) generateCA(certPath, keyPath string) error {
 		IsCA:                  true,
 	}
 
-	// Sign Cert
+	// 3. Sign Cert
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate: %w", err)
 	}
 
-	// Save Cert
+	// 4. Save Cert
 	certOut, err := os.Create(certPath)
 	if err != nil {
 		return fmt.Errorf("failed to open cert.pem for writing: %w", err)
 	}
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	certOut.Close()
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		certOut.Close()
+		return fmt.Errorf("failed to encode cert: %w", err)
+	}
+	if err := certOut.Close(); err != nil {
+		return fmt.Errorf("failed to close cert file: %w", err)
+	}
 
-	// Save Key
-	keyOut, err := os.Create(keyPath)
+	// 5. Save Key (Securely 0600)
+	keyOut, err := os.OpenFile(keyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open key.pem for writing: %w", err)
 	}
-	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
-	if err != nil {
-		return fmt.Errorf("unable to marshal private key: %w", err)
+	privBytes := x509.MarshalPKCS1PrivateKey(priv)
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: privBytes}); err != nil {
+		keyOut.Close()
+		return fmt.Errorf("failed to encode key: %w", err)
 	}
-	pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
-	keyOut.Close()
+	if err := keyOut.Close(); err != nil {
+		return fmt.Errorf("failed to close key file: %w", err)
+	}
 
 	fmt.Printf("Generated new Root CA at: %s\n", certPath)
 	return nil
