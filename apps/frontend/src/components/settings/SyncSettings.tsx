@@ -39,6 +39,8 @@ export function SyncSettings() {
     }, []);
 
     const checkAuth = async () => {
+        // @ts-ignore
+        if (!window.go) return;
         try {
             const id = await window.go.main.App.SyncGetUser();
             setUserId(id);
@@ -48,6 +50,11 @@ export function SyncSettings() {
     };
 
     const handleLogin = async () => {
+        // @ts-ignore
+        if (!window.go) {
+            toast.error("Not available in Web Mode");
+            return;
+        }
         try {
             await window.go.main.App.SyncSignIn(email, authPassword);
             toast.success("Logged in successfully");
@@ -58,6 +65,11 @@ export function SyncSettings() {
     };
 
     const handleSignup = async () => {
+        // @ts-ignore
+        if (!window.go) {
+            toast.error("Not available in Web Mode");
+            return;
+        }
         try {
             await window.go.main.App.SyncSignUp(email, authPassword);
             toast.success("Account created! You are now logged in.");
@@ -68,6 +80,11 @@ export function SyncSettings() {
     };
 
     const handlePush = async () => {
+        // @ts-ignore
+        if (!window.go) {
+            toast.error("Not available in Web Mode");
+            return;
+        }
         if (!password) {
             toast.error("Master Password required for encryption");
             return;
@@ -87,6 +104,11 @@ export function SyncSettings() {
     };
 
     const handlePull = async () => {
+        // @ts-ignore
+        if (!window.go) {
+            toast.error("Not available in Web Mode");
+            return;
+        }
         if (!password) {
             toast.error("Master Password required for decryption");
             return;

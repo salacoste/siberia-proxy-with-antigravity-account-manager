@@ -44,4 +44,6 @@ Unlock deep visibility into WebSocket connections. Instead of just seeing "Upgra
 -   **Models**: Updated `ProxyRequestEvent` and `WebSocketFrame` to share `connection_id` for accurate UI filtering.
 
 ## QA Results
--   **Status**: Ready for QA
+-   **Status**: Passed
+-   **Gate**: [Gate Decision](../../qa/gates/epic-09.story-32-websocket.yml)
+-   **Date**: 2026-01-05

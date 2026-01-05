@@ -10,7 +10,7 @@ export default {
         extend: {
             fontFamily: {
                 sans: ["Inter", "sans-serif"],
-                heading: ["Geist Sans", "sans-serif"],
+                heading: ["Space Grotesk", "Inter", "sans-serif"], // Geist Proxy
             },
             colors: {
                 border: "hsl(var(--border))",

@@ -9,4 +9,4 @@
 - Finalize documentation.
 
 ## Stories
-- [ ] **Story-41**: Fix Settings Page Crash in Web Mode (Missing Wails Runtime)
+- [x] **Story-41**: Fix Settings Page Crash in Web Mode (Missing Wails Runtime)

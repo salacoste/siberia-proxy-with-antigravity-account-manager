@@ -82,7 +82,7 @@ func (s *Service) ActivateAccount(id uint) error {
 	// If targetApp was "Code Helper", that likely failed or started a helper.
 	// Let's Skip Auto-Start for now (Wait for user action) OR simple `open -a "Visual Studio Code"` on Mac.
 	// Let's leave Start empty or commented out for safety until we add AppPath to Profile.
-	fmt.Println("[Account] Please restart your IDE manually if it doesn't open.")
+	// fmt.Println("[Account] Please restart your IDE manually if it doesn't open.")
 
 	return nil
 }

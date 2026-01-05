@@ -45,7 +45,7 @@ export default function SettingsPage() {
 
     const handleInstallCert = async () => {
         // @ts-ignore
-        if (!window.runtime) {
+        if (!window.runtime || !window.go) {
             toast.error("Certificate installation requires Wails App (Desktop).");
             return;
         }
@@ -70,6 +70,11 @@ export default function SettingsPage() {
     };
 
     const handleCheckUpdates = async () => {
+        // @ts-ignore
+        if (!window.go) {
+            toast.info("Update check unavailable in Web Mode");
+            return;
+        }
         setCheckingUpdate(true);
         try {
             const info = await CheckForUpdates();

@@ -317,7 +317,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// - HTTPS (port 443) which was intercepted by HandleConnect -> proxy.MitmHandler -> THIS function.
 	if strings.ToLower(r.Header.Get("Upgrade")) == "websocket" && strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		// Log
-		log.Printf("[WS] Intercepting WebSocket upgrade for: %s", r.URL.String())
+		// log.Printf("[WS] Intercepting WebSocket upgrade for: %s", r.URL.String())
 
 		// Generate a connID for this WS session if not present (handled by middleware usually, but here we might be outside if direct ServeHTTP?)
 		// Actually, ServeHTTP is called by MitM or direct.
@@ -433,7 +433,7 @@ func (s *Service) Start(ctx context.Context) error {
 			log.Printf("[Proxy] Error parsing upstream proxy URL: %v\n", err)
 		} else {
 			s.proxy.Tr.Proxy = http.ProxyURL(upstreamURL)
-			log.Printf("[Proxy] Using upstream proxy: %s\n", s.config.UpstreamProxy)
+			// log.Printf("[Proxy] Using upstream proxy: %s\n", s.config.UpstreamProxy)
 		}
 	} else {
 		s.proxy.Tr.Proxy = http.ProxyFromEnvironment

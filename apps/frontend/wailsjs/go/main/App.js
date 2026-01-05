@@ -97,3 +97,23 @@ export function UpdateAppConfig(arg1) {
 export function UploadSession(arg1) {
   return window['go']['main']['App']['UploadSession'](arg1);
 }
+
+export function CloudLogin(arg1, arg2) {
+  return window['go']['main']['App']['CloudLogin'](arg1, arg2);
+}
+
+export function CloudLogout() {
+  return window['go']['main']['App']['CloudLogout']();
+}
+
+export function CloudSignUp(arg1, arg2) {
+  return window['go']['main']['App']['CloudSignUp'](arg1, arg2);
+}
+
+export function CloudSync() {
+  return window['go']['main']['App']['CloudSync']();
+}
+
+export function CloudGetStatus() {
+  return window['go']['main']['App']['CloudGetStatus']();
+}

@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/salacoste/siberia/siberia/accounts"
 	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/ca"
+	"github.com/salacoste/siberia/siberia/cloud"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/logger"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
-	"github.com/salacoste/siberia/siberia/modules/sync"
-	"github.com/salacoste/siberia/siberia/modules/vault"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/salacoste/siberia/siberia/share"
 	"github.com/salacoste/siberia/siberia/types"
@@ -42,7 +40,7 @@ type App struct {
 	accountService   *accounts.Service
 	caService        *ca.Service
 	shareService     *share.Service
-	syncManager      *sync.Manager
+	cloudService     *cloud.Service
 	AnalyticsService *analytics.AnalyticsService
 }
 
@@ -98,32 +96,10 @@ func NewApp(cfg *config.Manager) *App {
 
 	shareSvc := share.NewService(shareProvider)
 
-	// Initialize Sync Manager (Supabase)
-	// Try loading from .env (local dev) or environment
-	_ = godotenv.Load() // Ignore error for prod/built binaries
-
-	supabaseURL := os.Getenv("SUPABASE_URL")
-	supabaseKey := os.Getenv("SUPABASE_KEY")
-
-	var syncMgr *sync.Manager
-	if supabaseURL != "" && supabaseKey != "" {
-		fmt.Println("Initializing Real Supabase Backend...")
-		// For MVP, we use a hardcoded user ID since we don't have a full auth flow yet
-		client := sync.NewSupabaseClient(supabaseURL, supabaseKey)
-		syncMgr = sync.NewManager(client)
-	} else {
-		fmt.Println("Warning: SUPABASE credentials not found. Falling back to in-memory Mock.")
-		// Fallback to Mock if no credentials (so app doesn't crash in dev without .env)
-		// We adapt MockServer (which is an HTTP server) to the CloudProvider?
-		// Actually, MockServer was a full HTTP server.
-		// Since we refactored Manager to use an interface, we can't easily plug the old MockServer (URL-based)
-		// without an adapter.
-		// For now, let's just warn and leave syncMgr nil, or use a dummy provider.
-		// Re-using the Mock logic efficiently requires rewriting MockServer to implement CloudProvider
-		// instead of being an HTTP Handler.
-		// Let's implement a simple InMemoryProvider here for fallback.
-		syncMgr = sync.NewManager(NewInMemoryProvider())
-	}
+	// Initialize Cloud Service
+	// We create a new logger instance for Cloud
+	cloudLog := logger.New("CLOUD")
+	cloudSvc := cloud.NewService(cfg, cloudLog)
 
 	return &App{
 		config:           cfg,
@@ -135,7 +111,7 @@ func NewApp(cfg *config.Manager) *App {
 		updaterService:   updater.NewService("v1.0.1"),
 		caService:        caSvc,
 		shareService:     shareSvc,
-		syncManager:      syncMgr,
+		cloudService:     cloudSvc,
 		AnalyticsService: analyticsSvc,
 	}
 }
@@ -299,51 +275,39 @@ func (a *App) UploadSession(event types.ProxyRequestEvent) (string, error) {
 	return a.shareService.UploadSession(event)
 }
 
-// === Sync & Vault API ===
-
 // SyncPush triggers a push of the current profile
-// For MVP: We hardcode a dummy profileID/password since we don't have the full UI for it yet
-// In real impl, these come from the Vault State.
-func (a *App) SyncPush(password string) error {
-	// 1. Encrypt Data (Mocking data for now)
-	vault := vault.NewVault()
-	data := []byte("{\"mock\": \"profile data\"}")
-	blob, err := vault.Encrypt(data, password)
-	if err != nil {
-		return err
-	}
-
-	// 2. Push
-	return a.syncManager.Push("default-profile", blob)
-}
-
-// SyncPull triggers a pull
-func (a *App) SyncPull(password string) (string, error) {
-	payload, err := a.syncManager.Pull("default-profile")
-	if err != nil {
-		return "", err
-	}
-	if payload == nil {
-		return "", fmt.Errorf("no remote data")
-	}
-
-	// Decrypt
-	vault := vault.NewVault()
-	data, err := vault.Decrypt(payload.Blob, password)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
+func (a *App) CloudSync() error {
+	return a.cloudService.Sync(a.ctx)
 }
 
 // SyncSignUp registers a user
-func (a *App) SyncSignUp(email, password string) error {
-	return a.syncManager.SignUp(email, password)
+func (a *App) CloudSignUp(email, password string) error {
+	_, err := a.cloudService.Client().SignUp(email, password)
+	// Login immediately after signup?
+	if err == nil {
+		return a.cloudService.Login(a.ctx, email, password)
+	}
+	return err
 }
 
 // SyncSignIn logs in a user
-func (a *App) SyncSignIn(email, password string) error {
-	return a.syncManager.SignIn(email, password)
+func (a *App) CloudLogin(email, password string) error {
+	return a.cloudService.Login(a.ctx, email, password)
+}
+
+// CloudLogout
+func (a *App) CloudLogout() error {
+	return a.cloudService.Logout(a.ctx)
+}
+
+// CloudGetStatus
+func (a *App) CloudGetStatus() map[string]interface{} {
+	cfg := a.config.Get()
+	return map[string]interface{}{
+		"enabled":   cfg.CloudEnabled,
+		"email":     cfg.CloudEmail,
+		"last_sync": cfg.CloudLastSync,
+	}
 }
 
 // OpenProjectInIDE opens the current working directory in the configured IDE
@@ -363,9 +327,4 @@ func (a *App) OpenProjectInIDE() error {
 	// 3. Open
 	opener := ide.NewOpener()
 	return opener.Open(target, cwd, 0)
-}
-
-// SyncGetUser returns current user ID
-func (a *App) SyncGetUser() string {
-	return a.syncManager.GetUser()
 }

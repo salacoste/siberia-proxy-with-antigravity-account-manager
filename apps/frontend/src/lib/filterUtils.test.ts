@@ -14,6 +14,7 @@ const createEvent = (overrides: Partial<ProxyEvent> = {}): ProxyEvent => ({
     resp_headers: {},
     req_body: "",
     resp_body: "",
+    connection_id: "conn-123",
     ...overrides
 });
 

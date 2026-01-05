@@ -1,0 +1,26 @@
+story_id: "story-46-layout-polish"
+epic_id: "epic-15"
+status: "PASS"
+confidence_score: 1.0
+date: "2026-01-05"
+
+checks:
+  - description: "Main Background"
+    status: "PASS"
+    evidence: "RootLayout uses bg-gray-50/50 (Light) and bg-zinc-950/50 (Dark)."
+
+  - description: "Sidebar Active State"
+    status: "PASS"
+    evidence: "Active items use white background with shadow-sm (Corca style) instead of gray fill."
+
+  - description: "Typography"
+    status: "PASS"
+    evidence: "Sidebar logo uses font-heading."
+
+risks:
+  - description: "None identified"
+    mitigation: "N/A"
+    severity: "LOW"
+
+recommendations:
+  - "Close Epic-15."

@@ -5,11 +5,14 @@ import DashboardPage from './pages/DashboardPage';
 import AccountsPage from './pages/AccountsPage';
 import MonitorPage from './pages/MonitorPage';
 import ProxyPage from './pages/ProxyPage';
+import CloudPage from './pages/CloudPage';
 import SettingsPage from './pages/SettingsPage';
 import { useConfigStore } from './stores/useConfigStore';
 import { useTheme } from './stores/useTheme';
 import { TrafficProvider } from './contexts/TrafficContext';
 import { SaveWindowSize } from '../wailsjs/go/main/App';
+
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
     // Initialize config and theme
@@ -22,6 +25,8 @@ function App() {
         const handleResize = () => {
             clearTimeout(timeout);
             timeout = setTimeout(async () => {
+                // @ts-ignore
+                if (!window.go) return;
                 try {
                     await SaveWindowSize(window.outerWidth, window.outerHeight);
                 } catch (e) {
@@ -37,23 +42,26 @@ function App() {
     }, []);
 
     return (
-        <TrafficProvider>
-            <BrowserRouter>
-                <Routes>
-                    <Route element={<RootLayout />}>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<DashboardPage />} />
-                        <Route path="/accounts" element={<AccountsPage />} />
-                        <Route path="accounts/add" element={<AccountsPage />} /> {/* Handle add via dialog on same page or separate if desired. We switched to Dialog so this might be redundant but keeping for safety */}
-                        <Route path="monitor" element={<MonitorPage />} />
-                        <Route path="proxy" element={<ProxyPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        {/* Fallback */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Route>
-                </Routes>
-            </BrowserRouter>
-        </TrafficProvider>
+        <ErrorBoundary>
+            <TrafficProvider>
+                <BrowserRouter>
+                    <Routes>
+                        <Route element={<RootLayout />}>
+                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                            <Route path="/dashboard" element={<DashboardPage />} />
+                            <Route path="/accounts" element={<AccountsPage />} />
+                            <Route path="accounts/add" element={<AccountsPage />} />
+                            <Route path="monitor" element={<MonitorPage />} />
+                            <Route path="proxy" element={<ProxyPage />} />
+                            <Route path="/cloud" element={<CloudPage />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            {/* Fallback */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                        </Route>
+                    </Routes>
+                </BrowserRouter>
+            </TrafficProvider>
+        </ErrorBoundary>
     );
 }
 

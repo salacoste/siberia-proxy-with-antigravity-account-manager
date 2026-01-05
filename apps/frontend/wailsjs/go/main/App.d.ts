@@ -53,3 +53,13 @@ export function SyncSignUp(arg1: string, arg2: string): Promise<void>;
 export function UpdateAppConfig(arg1: config.AppConfig): Promise<void>;
 
 export function UploadSession(arg1: types.ProxyRequestEvent): Promise<string>;
+
+export function CloudLogin(arg1: string, arg2: string): Promise<void>;
+
+export function CloudLogout(): Promise<void>;
+
+export function CloudSignUp(arg1: string, arg2: string): Promise<void>;
+
+export function CloudSync(): Promise<void>;
+
+export function CloudGetStatus(): Promise<any>;

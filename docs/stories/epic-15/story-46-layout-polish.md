@@ -1,23 +1,28 @@
-# Story-46: Sidebar & Layout Polish
+# Story-46: Layout & Sidebar Polish (Corca Style)
 
-**Parent**: Epic-15
-**Status**: Pending
+**Epic**: [Epic-15: Visual Redesign](../epics/epic-15-visual-redesign.md)
+**Status**: Completed
 
-## Description
-Update the application shell (Sidebar, Header, Main Area) to fully utilize the new design system.
+## Goal
+Transform the application shell to match the Corca layout: a split background where the sidebar is transparent/gray (or white) and the main content area is distinct (floating or solid).
 
-## Requirements
+## Scope
 1.  **Sidebar**:
-    -   **Contrast**: Increase distinction from main body. (Option: Slightly darker gray background `bg-sidebar` or distinct right border).
-    -   **Logo Text**: Ensure text next to logo is **DARK** in light mode (currently white/invisible).
-2.  **Layout**:
-    -   **Background**: Change global body background to a visible off-white/gray (e.g., `#F3F4F6` or `#F9FAFB`) to allow white cards to "pop".
-    -   **Depth**: Ensure white content cards have appropriate `shadow-sm` or `shadow` to separate from the new gray background.
+    -   Font: `Geist Sans` (Heading font).
+    -   Item Radius: `rounded-lg` or `rounded-xl`.
+    -   Active State: `bg-white text-blue-600 shadow-sm` (if sidebar is gray) OR `bg-blue-50 text-blue-600` (if sidebar is white).
+2.  **App Layout**:
+    -   Background: `bg-gray-50` (or `bg-corca-main`) for main area.
+    -   Logo: Ensure text is dark in light mode.
 3.  **Typography**:
-    -   Update Page Titles to use `GeistSans` and larger 30px+ size where appropriate.
+    -   Ensure Headings use `font-heading`.
 
 ## Acceptance Criteria
-- [x] Sidebar is clearly distinct from main content.
+- [x] Sidebar uses `font-heading` for links.
+- [x] Active sidebar item matches Corca style.
+- [x] Main background is `#F3F4F6` (Gray-100).
 - [x] Logo text is legible in Light Mode.
-- [x] Global background is off-white; Cards are white and pop.
-- [x] Page Headings use new font family.
+
+## Verification Plan
+- Check `RootLayout.tsx` and `AppSidebar.tsx` (if exists).
+- Verify "Monitor" and "Proxy" pages.

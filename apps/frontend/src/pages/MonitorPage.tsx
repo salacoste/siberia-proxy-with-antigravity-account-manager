@@ -57,7 +57,8 @@ export default function MonitorPage() {
                 req_headers: {},
                 resp_headers: {},
                 req_body: '',
-                resp_body: ''
+                resp_body: '',
+                connection_id: `mock-conn-${i}`
             });
         }
         addEvents(newEvents);

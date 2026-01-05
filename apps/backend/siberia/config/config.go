@@ -21,6 +21,7 @@ type AppConfig struct {
 	TargetIDE       string `json:"target_ide"` // "vscode", "cursor", "windsurf"
 	WindowWidth     int    `json:"window_width"`
 	WindowHeight    int    `json:"window_height"`
+	MaxLogHistory   int    `json:"max_log_history"` // Default 5000
 
 	// z.ai Provider
 	ZaiEnabled bool   `json:"zai_enabled"`
@@ -32,6 +33,13 @@ type AppConfig struct {
 	AuthEnabled bool   `json:"auth_enabled"`
 	AuthToken   string `json:"auth_token"`
 	MasterKey   string `json:"master_key"` // 32-byte hex encoded key
+
+	// Cloud Sync
+	CloudEnabled  bool   `json:"cloud_enabled"`
+	CloudUserID   string `json:"cloud_user_id"`
+	CloudEmail    string `json:"cloud_email"`
+	CloudLastSync string `json:"cloud_last_sync"` // RFC3339 Timestamp
+	CloudSyncKey  string `json:"cloud_sync_key"`  // 32-byte hex key for encrypting cloud blob
 }
 
 type Manager struct {
@@ -64,12 +72,18 @@ func NewManager() (*Manager, error) {
 			TargetIDE:       "vscode", // Default
 			WindowWidth:     1024,
 			WindowHeight:    768,
+			MaxLogHistory:   5000,
 			ZaiEnabled:      false,
 			ZaiBaseURL:      "https://api.z.ai/v1",
 			ZaiApiKey:       "",
 			AuthEnabled:     false,
 			AuthToken:       "",
 			MasterKey:       "",
+			CloudEnabled:    false,
+			CloudUserID:     "",
+			CloudEmail:      "",
+			CloudLastSync:   "",
+			CloudSyncKey:    "",
 			AppDataDir:      appDir,
 		},
 	}
@@ -83,6 +97,24 @@ func NewManager() (*Manager, error) {
 		mgr.Config.MasterKey = key
 	}
 
+	return mgr, nil
+}
+
+// NewTestManager creates a manager with a specific directory for testing
+func NewTestManager(dir string) (*Manager, error) {
+	appDir := filepath.Join(dir, "siberia")
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return nil, err
+	}
+	mgr := &Manager{
+		configPath: filepath.Join(appDir, "config.json"),
+		Config: AppConfig{
+			AppDataDir: appDir,
+		},
+	}
+	// Init default keys
+	key, _ := crypto.GenerateKey()
+	mgr.Config.MasterKey = key
 	return mgr, nil
 }
 

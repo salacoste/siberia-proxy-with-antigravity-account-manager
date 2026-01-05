@@ -1,0 +1,35 @@
+apiVersion: qa/v1alpha1
+kind: GateDecision
+metadata:
+  epic: epic-09
+  story: story-32-websocket
+  timestamp: "2026-01-05T07:36:00+03:00"
+  agent: Quinn (QA)
+spec:
+  decision: PASS
+  confidence: HIGH
+  rationale: |
+    Implementation meets all acceptance criteria.
+    - Custom MitM handler correctly routes decrypted traffic back to `ServeHTTP` for unified interception.
+    - WebSocket upgrading and frame decoding (RFC 6455) implemented robustly with `ConnectHijack`.
+    - `proxy:ws:frame` events are emitted with precise `ConnectionID` linking.
+    - Frontend Frame Inspector UI is implemented and functional.
+    - Automated tests pass and build is green.
+
+  checks:
+    - id: requirements-coverage
+      status: PASS
+      details: Frame Interception, Telemetry, and UI Inspector requirements met.
+    - id: automated-tests
+      status: PASS
+      details: Backend unit tests passed.
+    - id: build-status
+      status: PASS
+      details: Frontend built successfully.
+    - id: manual-verification-readiness
+      status: PASS
+      details: Walkthrough provided; manual testing steps clear.
+
+  recommendations:
+    - Verify performance under high-concurrency WebSocket scenarios (e.g., chat apps).
+    - Ensure large binary frames are truncated meaningfully in the UI to prevent freezing.
