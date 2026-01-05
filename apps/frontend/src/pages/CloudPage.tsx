@@ -9,7 +9,7 @@ import { Loader2, Cloud, LogOut, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CloudPage() {
-    const [status, setStatus] = useState({ enabled: false, email: "", last_sync: "" });
+    const [status, setStatus] = useState<{ enabled: boolean; email: string; last_sync: string }>({ enabled: false, email: "", last_sync: "" });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -24,7 +24,7 @@ export default function CloudPage() {
         }
         try {
             const s = await CloudGetStatus();
-            setStatus(s);
+            setStatus(s as { enabled: boolean; email: string; last_sync: string });
         } catch (e) {
             console.error(e);
         }
