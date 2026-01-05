@@ -38,3 +38,5 @@ data/minio/
 .env
 apps/backend/.env
 apps/backend/server_bin
+build_log.txt
+apps/backend/frontend/dist/
