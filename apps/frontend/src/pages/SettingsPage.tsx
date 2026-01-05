@@ -11,13 +11,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Shield } from 'lucide-react';
 
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
-import { CheckForUpdates, GetVersion } from '../../wailsjs/go/main/App';
+import { CheckForUpdates, GetVersion, CheckCertTrust, InstallCert } from '../../wailsjs/go/main/App';
 
 export default function SettingsPage() {
     const { config, updateConfig } = useConfigStore();
     const [upstream, setUpstream] = useState('');
     const [version, setVersion] = useState('Loading...');
     const [checkingUpdate, setCheckingUpdate] = useState(false);
+    const [trustStatus, setTrustStatus] = useState(false);
+    const [installingCert, setInstallingCert] = useState(false);
 
     useEffect(() => {
         if (config) {
@@ -26,8 +28,10 @@ export default function SettingsPage() {
         // @ts-ignore
         if (window.go) {
             GetVersion().then(setVersion);
+            CheckCertTrust().then(setTrustStatus);
         } else {
             setVersion("Web Mode (Mock)");
+            setTrustStatus(false);
         }
     }, [config]);
 
@@ -45,12 +49,15 @@ export default function SettingsPage() {
             toast.error("Certificate installation requires Wails App (Desktop).");
             return;
         }
+        setInstallingCert(true);
         try {
-            // @ts-ignore
-            await window.runtime.Invoke("InstallCert");
+            await InstallCert();
             toast.success("Certificate installed successfully.");
+            setTrustStatus(true);
         } catch (error: any) {
             toast.error("Failed to install certificate: " + error);
+        } finally {
+            setInstallingCert(false);
         }
     };
 
@@ -173,12 +180,22 @@ export default function SettingsPage() {
                         <div className="space-y-0.5">
                             <Label>Certificate Trust</Label>
                             <div className="text-sm text-muted-foreground">
-                                Root CA must be trusted by the OS.
+                                {trustStatus ? (
+                                    <span className="text-green-500 font-medium flex items-center gap-1">
+                                        ✅ Trusted (Ready to Decrypt)
+                                    </span>
+                                ) : (
+                                    <span className="text-amber-500 font-medium flex items-center gap-1">
+                                        ⚠️ Not Installed (Browser warnings expected)
+                                    </span>
+                                )}
                             </div>
                         </div>
-                        <Button variant="outline" onClick={handleInstallCert}>
-                            Install Certificate
-                        </Button>
+                        {!trustStatus && (
+                            <Button variant="outline" onClick={handleInstallCert} disabled={installingCert}>
+                                {installingCert ? "Installing..." : "Install Certificate"}
+                            </Button>
+                        )}
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
@@ -190,8 +207,14 @@ export default function SettingsPage() {
                         <Switch
                             checked={config.mitm_enabled}
                             onCheckedChange={(checked) => handleConfigChange("mitm_enabled", checked)}
+                            disabled={!trustStatus}
                         />
                     </div>
+                    {!trustStatus && config.mitm_enabled && (
+                        <div className="text-xs text-amber-500 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                            Warning: Decryption is enabled but Root CA is not trusted. You will see SSL errors in your browser.
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
