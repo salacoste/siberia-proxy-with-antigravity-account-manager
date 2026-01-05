@@ -1,7 +1,7 @@
 # Story-29: Traffic Inspector UI (Frontend)
 
 **Epic:** [Epic-09: Advanced Traffic Inspection](../epic-09-advanced-inspection.md)
-**Status:** Ready for Dev
+**Status:** Completed
 **Parent**: Epic-09
 
 ## Description
@@ -53,14 +53,10 @@ Develop a detailed inspection interface for the Proxy Monitor. When a user click
 -   Ensure `ProxyRequestEvent` type in frontend matches the backend struct updated in Epic-08.
 
 ## QA Results
-> [!CAUTION]
-> **Status: FAIL**
+> [!TIP]
+> **Status: PASS**
 > **Date:** 2026-01-05
 > **Reviewer:** Quinn (QA Agent)
 > **Gate:** [epic-09.story-29-traffic-inspector.yml](../../qa/gates/epic-09.story-29-traffic-inspector.yml)
 >
-> **Issues:**
-> 1. Missing "Copy as cURL" implementation.
-> 2. Missing "Copy Body" buttons.
->
-> **Action:** Returned to Dev for fixes.
+> **Action:** Approved for Merge.
