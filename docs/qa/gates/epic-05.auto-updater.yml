@@ -1,0 +1,26 @@
+story_id: "epic-05-auto-updater"
+epic_id: "epic-05"
+status: "PASS"
+confidence_score: 0.95
+date: "2026-01-05"
+
+checks:
+  - description: "Updater Service Logic"
+    status: "PASS"
+    evidence: "Unit tests in service_test.go output PASS."
+
+  - description: "UI Integration"
+    status: "PASS"
+    evidence: "SettingsPage.tsx calls CheckForUpdates() and displays toast."
+
+  - description: "Version Config"
+    status: "PASS"
+    evidence: "app.go Version updated to v1.2.0."
+
+risks:
+  - description: "No real update to download yet"
+    mitigation: "Verified using mocked unit tests. Real integration test requires a published release."
+    severity: "LOW"
+
+recommendations:
+  - "Merge and deploy v1.2.0."

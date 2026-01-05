@@ -1,7 +1,7 @@
 # Story-25: Certificate Authority Management (Backend)
 
 **Epic:** [Epic-08: HTTPS Decryption (MitM)](../epic-08-mitm.md)
-**Status:** In Progress
+**Status**: Completed
 **Parent**: Epic-08
 
 ## Description

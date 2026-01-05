@@ -23,6 +23,7 @@ type Service struct {
 	CurrentVersion string
 	RepoOwner      string
 	RepoName       string
+	APIURL         string // Defaults to https://api.github.com
 }
 
 // NewService creates a new updater service
@@ -32,8 +33,11 @@ func NewService(currentVersion string) *Service {
 		CurrentVersion: currentVersion,
 		RepoOwner:      "salacoste",
 		RepoName:       "siberia",
+		APIURL:         "https://api.github.com",
 	}
 }
+
+// ...
 
 // GitHubRelease represents the minimal structure of the GitHub Release API response
 type GitHubRelease struct {
@@ -44,7 +48,7 @@ type GitHubRelease struct {
 
 // CheckForUpdates queries the GitHub API for the latest release
 func (s *Service) CheckForUpdates() UpdateInfo {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", s.RepoOwner, s.RepoName)
+	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", s.APIURL, s.RepoOwner, s.RepoName)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", url, nil)

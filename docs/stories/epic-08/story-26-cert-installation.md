@@ -1,7 +1,7 @@
 # Story-26: Trusted Cert Installation (Backend/OS)
 
 **Epic:** [Epic-08: HTTPS Decryption (MitM)](../epic-08-mitm.md)
-**Status:** Ready for Dev
+**Status**: Completed
 **Parent**: Epic-08
 
 ## Description

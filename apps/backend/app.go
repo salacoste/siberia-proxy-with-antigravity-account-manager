@@ -44,6 +44,9 @@ type App struct {
 	AnalyticsService *analytics.AnalyticsService
 }
 
+// Version is the current application version
+const Version = "v1.2.0"
+
 // NewApp creates a new App application struct
 func NewApp(cfg *config.Manager) *App {
 	// Initialize DB
@@ -108,7 +111,7 @@ func NewApp(cfg *config.Manager) *App {
 		accountService:   accounts.NewService(database, cfg),
 		processService:   process.NewService(),
 		injectionService: injection.NewService(),
-		updaterService:   updater.NewService("v1.0.1"),
+		updaterService:   updater.NewService(Version),
 		caService:        caSvc,
 		shareService:     shareSvc,
 		cloudService:     cloudSvc,
@@ -145,8 +148,6 @@ func (i *InMemoryProvider) SignIn(email, password string) error {
 func (i *InMemoryProvider) GetUser() string {
 	return "mock-user-id"
 }
-
-// ... existing methods ...
 
 // ListAccounts returns all accounts (safe DTOs)
 func (a *App) ListAccounts() ([]accounts.AccountDTO, error) {
@@ -243,9 +244,9 @@ func (a *App) CheckForUpdates() updater.UpdateInfo {
 	return a.updaterService.CheckForUpdates()
 }
 
-// GetAppVersion returns the current app version
+// GetVersion returns the current app version
 func (a *App) GetVersion() string {
-	return "v1.0.1"
+	return Version
 }
 
 // === Breakpoint API ===
