@@ -8,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { useConfigStore } from '@/stores/useConfigStore';
 import { toast } from 'sonner';
+import { generateSnippet } from '@/utils/snippets';
+import { Code2 } from 'lucide-react';
+
 
 export default function ProxyPage() {
     const { config } = useConfigStore();
@@ -80,7 +83,51 @@ export default function ProxyPage() {
                         ))}
                     </Tabs>
                 </CardContent>
+
             </Card>
-        </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Code2 className="h-5 w-5" />
+                        Connect to Siberia
+                    </CardTitle>
+                    <CardDescription>
+                        Use Siberia as a drop-in replacement for OpenAI/Claude in your code.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="python" className="w-full">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="python">Python</TabsTrigger>
+                            <TabsTrigger value="node">Node.js</TabsTrigger>
+                            <TabsTrigger value="curl">Curl</TabsTrigger>
+                            <TabsTrigger value="env">.env</TabsTrigger>
+                        </TabsList>
+
+                        {['python', 'node', 'curl', 'env'].map((lang) => {
+                            const snippet = generateSnippet(lang as any, port);
+                            return (
+                                <TabsContent key={lang} value={lang} className="space-y-4 mt-4">
+                                    <div className="relative">
+                                        <pre className="p-4 rounded-lg bg-muted overflow-x-auto font-mono text-sm border">
+                                            {snippet}
+                                        </pre>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="absolute top-2 right-2"
+                                            onClick={() => handleCopy(snippet)}
+                                        >
+                                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+                            );
+                        })}
+                    </Tabs>
+                </CardContent>
+            </Card>
+        </div >
     );
 }
