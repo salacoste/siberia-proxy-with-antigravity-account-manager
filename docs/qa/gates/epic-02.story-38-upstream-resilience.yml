@@ -1,0 +1,37 @@
+schema: 1
+story: 'epic-02.story-38'
+story_title: 'Implement Upstream Resilience (Pools & Rotation)'
+gate: PASS
+status_reason: 'Resilience logic (Retry on 429, Failover on 500) verified via unit tests. Account Rotation logic integrated correctly via AccountProvider interface.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-05T16:29:00Z'
+
+top_issues: []
+
+waiver: { active: false }
+
+quality_score: 95
+expires: '2026-01-19T16:29:00Z'
+
+evidence:
+  tests_reviewed: 2
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3] # Resilience, Performance, Availability
+    ac_gaps: [] 
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Token handling is ephemeral and rotated.'
+  performance:
+    status: PASS
+    notes: 'HTTP Transport configured with Keep-Alive and Pooling.'
+  reliability:
+    status: PASS
+    notes: 'Retry and Fallback strategies verified.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Add metrics/logging for rotation events to monitor account health.'

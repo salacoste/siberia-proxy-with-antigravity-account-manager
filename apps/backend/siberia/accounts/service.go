@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/salacoste/siberia/siberia/config"
@@ -154,4 +155,30 @@ func (s *Service) CreateAccount(email, password, recovery, proxyGroup string) er
 	}
 
 	return nil
+}
+
+// GetRotatingToken returns a valid session token from the pool of active accounts.
+func (s *Service) GetRotatingToken() (string, error) {
+	var accounts []db.Account
+	if err := s.db.Where("is_active = ?", true).Find(&accounts).Error; err != nil {
+		return "", err
+	}
+
+	if len(accounts) == 0 {
+		return "", fmt.Errorf("no active accounts available")
+	}
+
+	idx := rand.Intn(len(accounts))
+
+	// Check SessionToken first, fallback to Password if SessionToken is empty
+	token := string(accounts[idx].SessionToken)
+	if token == "" {
+		token = string(accounts[idx].Password)
+	}
+
+	if token == "" {
+		return "", fmt.Errorf("selected account %d has no tokens", accounts[idx].ID)
+	}
+
+	return token, nil
 }
