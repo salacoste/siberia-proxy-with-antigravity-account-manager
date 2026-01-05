@@ -147,11 +147,12 @@ func mapContent(content any) ([]mappers.GeminiPart, error) {
 				continue
 			}
 			if typ, ok := partMap["type"].(string); ok {
-				if typ == "text" {
+				switch typ {
+				case "text":
 					if txt, ok := partMap["text"].(string); ok {
 						parts = append(parts, mappers.GeminiPart{Text: txt})
 					}
-				} else if typ == "image_url" {
+				case "image_url":
 					// Handle Image (Placeholder for now, usually needs Base64 fetching or inline)
 					// Verify if we have URL or Base64. Gemini needs inline data usually.
 					// Implementation note: We might need to download URL or pass as is if supported.
