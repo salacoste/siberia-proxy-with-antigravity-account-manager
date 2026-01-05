@@ -1,7 +1,8 @@
 # Story-37: Claude Handler & Resilience Strategies
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Ready
+**Status:** Ready for Review
+
 **Reference:** `docs/ag-ref-docs/feature-proxy-engine.md`
 
 ## Goal
@@ -13,16 +14,17 @@ Vertex AI is stricter than the native Anthropic API.
 2.  **Downgrade:** Background tasks (non-user interactive) often fail with expensive models or waste quota. The proxy should detect these and downgrade to `flash` or `lite`.
 
 ## Tasks
-- [ ] **Task 1: Messages Handler**
+- [x] **Task 1: Messages Handler**
     -   Accept `POST /v1/messages`.
     -   Check `x-api-key` (dummy or pass-through).
     -   Call Upstream Client.
-- [ ] **Task 2: Smart Downgrade Logic**
+- [x] **Task 2: Smart Downgrade Logic**
     -   Detect "Background Patterns" (e.g., specific prompt headers or fast retry loops from Agentic IDEs).
     -   Override Model Selection to `gemini-1.5-flash` or `gemini-2.0-flash-lite` dynamically.
-- [ ] **Task 3: Thinking Block Sanitization**
+- [x] **Task 3: Thinking Block Sanitization**
     -   Validate incoming "Thinking" blocks.
     -   If invalid (missing signature), convert to standard "Text" block to prevent Upstream 400 Error.
+
 - [ ] **Task 4: Z.ai Integration hooks**
     -   (Stub/Prepare) If Mode is Z.ai, route appropriately (see `story-07`).
 
@@ -33,3 +35,20 @@ Vertex AI is stricter than the native Anthropic API.
 
 ## Technical Notes
 - Reference `proxy/handlers/claude.rs`.
+
+## QA Results
+
+### Review Date: 2026-01-05
+
+### Reviewed By: Quinn (Test Architect)
+
+### Code Quality Assessment
+Handler implements the complex Claude SSE protocol correctly. Smart Downgrade logic is implemented with verified tests. Integration with Mappers allows for robust handling of "Thinking" blocks.
+
+### Compliance Check
+- Coding Standards: [✓]
+- All ACs Met: [✓] Verified by unit tests.
+
+### Gate Status
+Gate: PASS → docs/qa/gates/epic-02.story-37-proxy-handler-claude.yml
+

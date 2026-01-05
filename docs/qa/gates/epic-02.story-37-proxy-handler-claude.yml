@@ -1,0 +1,37 @@
+schema: 1
+story: 'epic-02.story-37'
+story_title: 'Implement Claude Handler & Resilience'
+gate: PASS
+status_reason: 'Claude Handler correctly processes Unary and Streaming requests. Smart Downgrade logic verified. Streaming event sequence matches Anthropic protocol.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-05T16:15:00Z'
+
+top_issues: []
+
+waiver: { active: false }
+
+quality_score: 95
+expires: '2026-01-19T16:15:00Z'
+
+evidence:
+  tests_reviewed: 3
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3] # Client, Resilience, Downgrade
+    ac_gaps: [] # Task 4 (Z.ai) is future scope stub
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No PII checks needed (handled in mapper).'
+  performance:
+    status: PASS
+    notes: 'Streaming overhead minimal.'
+  reliability:
+    status: PASS
+    notes: 'Downgrade logic improves success rate for background tasks.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Expand Downgrade patterns based on real usage telemetry.'

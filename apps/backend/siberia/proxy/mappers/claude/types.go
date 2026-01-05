@@ -18,8 +18,8 @@ type MessageRequest struct {
 }
 
 type Message struct {
-	Role    string         `json:"role"`
-	Content []ContentBlock `json:"content"`
+	Role    string `json:"role"`
+	Content any    `json:"content"` // string or []ContentBlock
 }
 
 type ContentBlock struct {

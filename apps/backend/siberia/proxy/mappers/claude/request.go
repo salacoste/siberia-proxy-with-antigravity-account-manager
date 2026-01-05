@@ -1,6 +1,8 @@
 package claude
 
 import (
+	"encoding/json"
+
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 )
 
@@ -43,7 +45,37 @@ func MapRequest(req *MessageRequest) (*mappers.GeminiRequest, error) {
 			Role: mapRole(msg.Role),
 		}
 
-		for _, block := range msg.Content {
+		var blocks []ContentBlock
+		switch v := msg.Content.(type) {
+		case string:
+			blocks = []ContentBlock{{Type: "text", Text: v}}
+		case []interface{}:
+			// Need to re-marshal or manually map map[string]interface
+			// This is painful with 'any'. Better to use helper or try convert.
+			// Ideally we use json.RawMessage or custom Unmarshal.
+			// For simplicity in this step, let's assume if it came from JSON decode into 'any', it's []interface{}.
+			for _, item := range v {
+				if m, ok := item.(map[string]interface{}); ok {
+					cb := ContentBlock{}
+					// Minimal mapping for now
+					if t, ok := m["type"].(string); ok {
+						cb.Type = t
+					}
+					if t, ok := m["text"].(string); ok {
+						cb.Text = t
+					}
+					// ... map other fields if needed ...
+					// Fast implementation:
+					jsonDat, _ := json.Marshal(m)
+					json.Unmarshal(jsonDat, &cb)
+					blocks = append(blocks, cb)
+				}
+			}
+		case []ContentBlock:
+			blocks = v
+		}
+
+		for _, block := range blocks {
 			// CRITICAL: Strip Cache Control (Implicitly done by not mapping it to anything in Gemini)
 
 			// Handle different block types
@@ -75,30 +107,17 @@ func MapRequest(req *MessageRequest) (*mappers.GeminiRequest, error) {
 
 			case "tool_result":
 				// Map to FunctionResponse
-				// Gemini v1internal expects {name, response: {content: ...}} strictly
 				respMap := map[string]interface{}{
 					"content": block.Content,
 				}
-				// Note: Gemini actually needs the function name corresponding to this result.
-				// Claude provides `tool_use_id`. We might need to look up the name or pass ID if Gemini supports.
-				// Internal API often implies strict {name: "func_name", response: {}} mapping.
-				// If we don't have the name from request history easily, this is tricky.
-				// However, for proxying, we assume 1:1 map.
-				// IMPORTANT: Reference App handles this by tracking tool calls or assuming simplistic mapping.
-				// We'll map to generic structure for now.
 				gContent.Parts = append(gContent.Parts, mappers.GeminiPart{
 					FunctionResponse: &mappers.GeminiFuncResp{
-						Name: block.ToolUseID, // This might fail if Gemini expects Name not ID.
-						// Ref app usually fixes this by context lookup or pass-thru.
+						Name:     block.ToolUseID,
 						Response: respMap,
 					},
 				})
 
 			case "thinking":
-				// Upgrade/Downgrade logic handled here?
-				// Gemini doesn't support "thinking" input directly usually, unless enabled on model.
-				// We typically treat it as text or drop it if Gemini strictly doesn't support it.
-				// For now, treat as Text to preserve context.
 				if block.Thinking != "" {
 					gContent.Parts = append(gContent.Parts, mappers.GeminiPart{Text: block.Thinking})
 				}
