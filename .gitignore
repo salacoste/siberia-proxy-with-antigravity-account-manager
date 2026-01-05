@@ -37,3 +37,4 @@ data/minio/
 # Secrets
 .env
 apps/backend/.env
+apps/backend/server_bin
