@@ -9,12 +9,31 @@ import SettingsPage from './pages/SettingsPage';
 import { useConfigStore } from './stores/useConfigStore';
 import { useTheme } from './stores/useTheme';
 import { TrafficProvider } from './contexts/TrafficContext';
+import { SaveWindowSize } from '../wailsjs/go/main/App';
 
 function App() {
     // Initialize config and theme
     useTheme();
     React.useEffect(() => {
         useConfigStore.getState().fetchConfig();
+
+        // Window Persistence
+        let timeout: NodeJS.Timeout;
+        const handleResize = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(async () => {
+                try {
+                    await SaveWindowSize(window.outerWidth, window.outerHeight);
+                } catch (e) {
+                    console.error("Failed to save window size", e);
+                }
+            }, 1000);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(timeout);
+        };
     }, []);
 
     return (
@@ -22,8 +41,9 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route element={<RootLayout />}>
-                        <Route path="/" element={<DashboardPage />} />
-                        <Route path="accounts" element={<AccountsPage />} />
+                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/accounts" element={<AccountsPage />} />
                         <Route path="accounts/add" element={<AccountsPage />} /> {/* Handle add via dialog on same page or separate if desired. We switched to Dialog so this might be redundant but keeping for safety */}
                         <Route path="monitor" element={<MonitorPage />} />
                         <Route path="proxy" element={<ProxyPage />} />

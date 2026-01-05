@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"github.com/elazarl/goproxy"
+	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/types"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -31,20 +33,7 @@ type Service struct {
 	SkipWailsEvents   bool // For testing
 }
 
-type ProxyRequestEvent struct {
-	Method      string            `json:"method"`
-	URL         string            `json:"url"`
-	Status      int               `json:"status"`
-	Duration    int64             `json:"duration_ms"` // milliseconds
-	Time        string            `json:"time"`
-	Size        int64             `json:"size"`
-	ReqHeaders  map[string]string `json:"req_headers"`
-	RespHeaders map[string]string `json:"resp_headers"`
-	ReqBody     string            `json:"req_body"`
-	RespBody    string            `json:"resp_body"`
-}
-
-func NewService(cfg *config.AppConfig, caSvc *ca.Service) *Service {
+func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine) *Service {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = true
 
@@ -54,7 +43,8 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service) *Service {
 		caService:         caSvc,
 		CaptureBody:       true,
 		BreakpointManager: NewBreakpointManager(),
-		TelemetryManager:  NewTelemetryManager(1000), // Buffer 1000 events
+
+		TelemetryManager: NewTelemetryManager(1000, analyticsEngine), // Buffer 1000 events
 	}
 
 	// Configure MitM if enabled
@@ -145,7 +135,7 @@ func (s *Service) registerHandlers() {
 			// Inspecting the *frames* on a standard goproxy HTTPS MitM is hard because goproxy handles the read/write copy loop.
 
 			// Just Log it for now to prove detection.
-			runtime.EventsEmit(s.ctx, "proxy:log", ProxyRequestEvent{
+			runtime.EventsEmit(s.ctx, "proxy:log", types.ProxyRequestEvent{
 				Method: "WEBSOCKET",
 				URL:    r.URL.String(),
 				Status: 101,
@@ -258,7 +248,7 @@ func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start ti
 		}
 	}
 
-	event := ProxyRequestEvent{
+	event := types.ProxyRequestEvent{
 		Method:      req.Method,
 		URL:         req.URL.String(),
 		Status:      status,
@@ -311,6 +301,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.handleZaiForward(rw, r)
 			return
 		}
+	}
+
+	// Track Active Connection (Request Scope)
+	if s.TelemetryManager != nil && s.TelemetryManager.analytics != nil {
+		s.TelemetryManager.analytics.IncrementActive()
+		defer s.TelemetryManager.analytics.DecrementActive()
 	}
 
 	// 2. Otherwise default to standard goproxy (Forward Proxy)

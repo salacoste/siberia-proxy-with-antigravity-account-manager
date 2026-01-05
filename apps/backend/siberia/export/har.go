@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/types"
 )
 
 // HAR 1.2 Structures
@@ -80,7 +80,7 @@ type Timings struct {
 	Receive int `json:"receive"`
 }
 
-func ToHAR(event proxy.ProxyRequestEvent) (string, error) {
+func ToHAR(event types.ProxyRequestEvent) (string, error) {
 	// Parse Time
 	// event.Time is "15:04:05", which misses date.
 	// ideally we want full ISO8601.

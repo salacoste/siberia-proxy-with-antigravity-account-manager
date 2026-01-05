@@ -62,6 +62,10 @@ export function ResumeRequest(arg1, arg2) {
   return window['go']['main']['App']['ResumeRequest'](arg1, arg2);
 }
 
+export function SaveWindowSize(arg1, arg2) {
+  return window['go']['main']['App']['SaveWindowSize'](arg1, arg2);
+}
+
 export function SyncGetUser() {
   return window['go']['main']['App']['SyncGetUser']();
 }

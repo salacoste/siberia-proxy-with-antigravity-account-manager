@@ -4,6 +4,7 @@ import {proxy} from '../models';
 import {updater} from '../models';
 import {config} from '../models';
 import {accounts} from '../models';
+import {types} from '../models';
 
 export function ActivateAccount(arg1:number):Promise<void>;
 
@@ -31,9 +32,11 @@ export function ListAccounts():Promise<Array<accounts.AccountDTO>>;
 
 export function OpenProjectInIDE():Promise<void>;
 
-export function RegisterTypes():Promise<proxy.PendingRequest|proxy.WebSocketFrame>;
+export function RegisterTypes():Promise<proxy.PendingRequest>;
 
 export function ResumeRequest(arg1:string,arg2:proxy.ModifiedRequest):Promise<boolean>;
+
+export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
 
 export function SyncGetUser():Promise<string>;
 
@@ -47,4 +50,4 @@ export function SyncSignUp(arg1:string,arg2:string):Promise<void>;
 
 export function UpdateAppConfig(arg1:config.AppConfig):Promise<void>;
 
-export function UploadSession(arg1:proxy.ProxyRequestEvent):Promise<string>;
+export function UploadSession(arg1:types.ProxyRequestEvent):Promise<string>;

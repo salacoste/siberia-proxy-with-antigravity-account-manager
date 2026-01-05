@@ -10,7 +10,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const NAV_ITEMS = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
     { name: 'Accounts', path: '/accounts', icon: Users },
     { name: 'Monitor', path: '/monitor', icon: Activity },
     { name: 'Proxy', path: '/proxy', icon: Server },
