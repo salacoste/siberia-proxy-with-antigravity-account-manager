@@ -38,6 +38,10 @@ func (s *Service) ActivateAccount(id uint) error {
 		return err
 	}
 
+	return s.performActivation(&acc)
+}
+
+func (s *Service) performActivation(acc *db.Account) error {
 	// 1. Resolve IDE Profile
 	cfg := s.config.Get()
 	targetIDE := cfg.TargetIDE
@@ -50,11 +54,11 @@ func (s *Service) ActivateAccount(id uint) error {
 		return fmt.Errorf("failed to get IDE profile for '%s': %w", targetIDE, err)
 	}
 
-	fmt.Printf("[Account] Activating for IDE: %s (Process: %s)\n", profile.Name, profile.ProcessName)
+	fmt.Printf("[Account] Activating for IDE: %s (Process: %s)\n", profile.Name, profile.GetProcessName())
 
 	// 2. Kill Target Process
-	if err := s.process.Kill(profile.ProcessName); err != nil {
-		return fmt.Errorf("failed to kill process %s: %w", profile.ProcessName, err)
+	if err := s.process.Kill(profile.GetProcessName()); err != nil {
+		return fmt.Errorf("failed to kill process %s: %w", profile.GetProcessName(), err)
 	}
 
 	// 3. Resolve DB Path
@@ -69,20 +73,6 @@ func (s *Service) ActivateAccount(id uint) error {
 	if err != nil {
 		return fmt.Errorf("failed to inject into %s: %w", dbPath, err)
 	}
-
-	// 5. Start Process
-	// We can't strictly "Start" the app easily from binary path across all OSes consistently without knowing where the App bundle is.
-	// IdeProfile doesn't store App Path yet.
-	// For now, we only Kill. Starting usually requires user to click the icon, specifically for "Code Helper" which is a background process of VS Code.
-	// VS Code relaunch is tricky programmatically (`code .` works if in PATH).
-	// Let's try to start if we know the path, otherwise just log instructions.
-	// Since we don't store App Path in Profile yet, we'll keep the process.Start generic logic or skip it.
-	// "Code Helper" is internal. We usually want to start the Main App?
-	// The original code tried: s.process.Start(targetApp).
-	// If targetApp was "Code Helper", that likely failed or started a helper.
-	// Let's Skip Auto-Start for now (Wait for user action) OR simple `open -a "Visual Studio Code"` on Mac.
-	// Let's leave Start empty or commented out for safety until we add AppPath to Profile.
-	// fmt.Println("[Account] Please restart your IDE manually if it doesn't open.")
 
 	return nil
 }
@@ -139,5 +129,29 @@ func (s *Service) CreateAccount(email, password, recovery, proxyGroup string) er
 		IsActive:      true,
 	}
 
-	return s.db.Create(acc).Error
+	// Start Transaction
+	tx := s.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// 1. Create Record
+	if err := tx.Create(acc).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 2. Validate/Activate (Inject into IDE)
+	if err := s.performActivation(acc); err != nil {
+		tx.Rollback()
+		// Wrap error to be friendly to UI
+		return fmt.Errorf("validation failed: could not activate account in IDE: %v", err)
+	}
+
+	// 3. Commit
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	return nil
 }

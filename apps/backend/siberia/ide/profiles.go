@@ -8,30 +8,57 @@ import (
 )
 
 type IdeProfile struct {
-	ID           string
-	Name         string
-	ProcessName  string
-	DBPathSuffix string // Relative to User Home
+	ID   string
+	Name string
+}
+
+// GetProcessName returns the OS-specific process name to kill
+func (p IdeProfile) GetProcessName() string {
+	switch p.ID {
+	case "vscode":
+		switch runtime.GOOS {
+		case "windows":
+			return "Code.exe"
+		case "linux":
+			return "code"
+		default:
+			return "Code Helper" // macOS
+		}
+	case "cursor":
+		switch runtime.GOOS {
+		case "windows":
+			return "Cursor.exe"
+		case "linux":
+			return "cursor"
+		default:
+			return "Cursor"
+		}
+	case "windsurf":
+		switch runtime.GOOS {
+		case "windows":
+			return "Windsurf.exe"
+		case "linux":
+			return "windsurf"
+		default:
+			return "Windsurf"
+		}
+	default:
+		return ""
+	}
 }
 
 var Registry = map[string]IdeProfile{
 	"vscode": {
-		ID:           "vscode",
-		Name:         "VS Code",
-		ProcessName:  "Code Helper", // macOS specific, might need OS check later
-		DBPathSuffix: "Library/Application Support/Code/User/globalStorage/state.vscdb",
+		ID:   "vscode",
+		Name: "VS Code",
 	},
 	"cursor": {
-		ID:           "cursor",
-		Name:         "Cursor",
-		ProcessName:  "Cursor",
-		DBPathSuffix: "Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+		ID:   "cursor",
+		Name: "Cursor",
 	},
 	"windsurf": {
-		ID:           "windsurf",
-		Name:         "Windsurf",
-		ProcessName:  "Windsurf",
-		DBPathSuffix: "Library/Application Support/Windsurf/User/globalStorage/state.vscdb",
+		ID:   "windsurf",
+		Name: "Windsurf",
 	},
 }
 
@@ -48,9 +75,41 @@ func (p IdeProfile) GetDBPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// TODO: Handle Windows/Linux paths if needed in future. Assuming macOS for now based on project context.
-	if runtime.GOOS != "darwin" {
-		// Fallback or specific logic for other OS
+
+	var suffix string
+	switch p.ID {
+	case "vscode":
+		switch runtime.GOOS {
+		case "windows":
+			suffix = "AppData/Roaming/Code/User/globalStorage/state.vscdb"
+		case "linux":
+			suffix = ".config/Code/User/globalStorage/state.vscdb"
+		default: // darwin
+			suffix = "Library/Application Support/Code/User/globalStorage/state.vscdb"
+		}
+	case "cursor":
+		switch runtime.GOOS {
+		case "windows":
+			suffix = "AppData/Roaming/Cursor/User/globalStorage/state.vscdb"
+		case "linux":
+			suffix = ".config/Cursor/User/globalStorage/state.vscdb"
+		default: // darwin
+			suffix = "Library/Application Support/Cursor/User/globalStorage/state.vscdb"
+		}
+	case "windsurf":
+		switch runtime.GOOS {
+		case "windows":
+			suffix = "AppData/Roaming/Windsurf/User/globalStorage/state.vscdb"
+		case "linux":
+			suffix = ".config/Windsurf/User/globalStorage/state.vscdb"
+		default: // darwin
+			suffix = "Library/Application Support/Windsurf/User/globalStorage/state.vscdb"
+		}
 	}
-	return filepath.Join(home, p.DBPathSuffix), nil
+
+	if suffix == "" {
+		return "", fmt.Errorf("unsupported OS or IDE for path resolution")
+	}
+
+	return filepath.Join(home, suffix), nil
 }
