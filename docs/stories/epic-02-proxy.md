@@ -16,3 +16,11 @@
 *   [ ] **Story-07:** Implement z.ai Provider Integration.
 *   [ ] **Story-08:** Implement Proxy Authentication (Bearer Token).
 *   [ ] **Story-09:** Implement MCP Server Embedding.
+*   [ ] **Story-51:** Implement Protocol Mappers (Engine Core).
+*   [ ] **Story-52:** OpenAI Handler & SSOP.
+*   [ ] **Story-53:** Claude Handler & Resilience.
+*   [ ] **Story-54:** Upstream Resilience (Pools & Rotation).
+*   [ ] **Story-55:** Proxy Code Snippets (DevTools).
+
+
+

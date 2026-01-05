@@ -35,6 +35,15 @@
     *   Update specific keys (e.g., `github.auth`).
     *   **Risk:** Corrupting VS Code state. **Mitigation:** Backup file before writing.
 
+### Story-50: Advanced Protobuf Injection
+
+*   **Goal:** Replace naive injection with robust Protobuf byte manipulation logic (Reference App parity).
+*   **Tasks:**
+    *   Implement `runtime/protobuf.go` (Varint decoding/encoding).
+    *   Port "Field 6" replacement logic.
+    *   Integrate with `injector.go`.
+
+
 ### Story-21: Integration & Verification
 *   **Goal:** Wire it all together and verify end-to-end.
 *   **Tasks:**

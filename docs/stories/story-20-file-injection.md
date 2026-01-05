@@ -1,7 +1,9 @@
 # Story-20: Implement SQLite Token Injection
 
 **Epic:** [Epic-06: Deep Integration](./epic-06-deep-integration.md)
-**Status:** Completed
+**Status:** Superseded by [Story-50](./story-50-protobuf-injection.md)
+
+
 
 ## Goal
 Write connection tokens into VS Code's `globalStorage/state.vscdb`.

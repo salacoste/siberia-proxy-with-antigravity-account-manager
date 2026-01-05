@@ -9,6 +9,11 @@
 *   **Signing:** (Optional/Setup) Configuration for signing binaries if certificates are provided.
 
 ## Stories
+*   [ ] [Story-16: GitHub Release Automation](./story-16-github-release.md)
+*   [ ] [Story-99: Packaging](./story-99-packaging.md)
+*   [ ] [Story-58: Legacy Data Import](./story-58-legacy-import.md)
+
+
 - [ ] **Story-16: Automate GitHub Releases**
     -   Update `build.yml` to trigger on tags.
     -   Add step to upload build artifacts (binaries/installers) to the GitHub Release.

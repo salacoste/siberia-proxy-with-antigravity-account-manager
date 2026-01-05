@@ -14,4 +14,7 @@
 *   [ ] **Story-11:** Create Accounts Screen UI (List/Grid).
 *   [ ] **Story-12:** Implement Add Account Logic (OAuth Loopback).
 *   [ ] **Story-13:** Implement "Switch Account" External App Integration.
-*   [ ] **Story-14:** Implement Quota Refresh Automation.
+*   [ ] **Story-13:** Implement "Switch Account" External App Integration.
+*   [ ] **Story-57:** Implement Quota Refresh & Tier Detection.
+
+

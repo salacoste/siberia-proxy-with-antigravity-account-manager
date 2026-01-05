@@ -15,11 +15,15 @@ Implement a persistent access log (standard Apache/Nginx format or JSON line) fo
     -   Update `siberia/proxy/service.go`.
     -   Write to log file asynchronously to avoid blocking implementation.
     -   Log: Time, Source IP, Method, URL, Status, Size, Duration, User-Agent.
+    -   **Privacy:** Mask emails in the request/response context (e.g. `s***@gmail.com`) to prevent PII leakage.
+
 
 ## Acceptance Criteria
 - [ ] Requests are written to `access.log` in the config directory.
 - [ ] Logs rotate (e.g., at 10MB).
 - [ ] Log format is parseable (JSON or CLF). (Preferred: JSONL for modern tools).
+- [ ] **Privacy:** Email addresses are masked in the logs.
+
 
 ## QA Results
 

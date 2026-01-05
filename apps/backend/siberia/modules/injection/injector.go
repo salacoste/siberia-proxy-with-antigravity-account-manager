@@ -47,21 +47,48 @@ func (i *Service) Inject(dbPath string, accessToken, refreshToken string, expiry
 	defer db.Close()
 
 	// 4. Update Token
-	// Using a generic key for demonstration. In reality, this matches the target extension's key.
-	// VS Code state.vscdb table is 'ItemTable' (key TEXT, value TEXT)
-	const targetKey = "siberia.auth_token"
+	const targetKey = "github.authentication/github.auth" // Real VS Code Key
+	const selectSQL = `SELECT value FROM ItemTable WHERE key = ?`
 	const updateSQL = `INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)`
 
-	// Value is typically a JSON string in VS Code
-	tokenValue := fmt.Sprintf(`{"accessToken":"%s","refreshToken":"%s"}`, accessToken, refreshToken)
+	// A. Read existing blob
+	var existingBlob []byte
+	err = db.QueryRow(selectSQL, targetKey).Scan(&existingBlob)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("failed to read existing blob: %w", err)
+	}
 
-	_, err = db.Exec(updateSQL, targetKey, tokenValue)
+	// B. Prepare new token payload (Access Token)
+	// In the Reference App, we just inject the Access Token as the value of Field 6.
+	// The rest of the structure (expiry, scopes) is handled by VS Code or we reuse existing if we were smarter,
+	// but for now, we follow the "Insert New Field 6" strategy.
+	newTokenPayload := []byte(accessToken)
+
+	// C. Modify Protobuf
+	var newBlob []byte
+	if len(existingBlob) == 0 {
+		// If no record exists, we probably need a valid skeleton.
+		// For now, let's create a minimal valid blob with just Field 6,
+		// though typically VS Code creates the structure first.
+		// Strategy: Create empty blob + Field 6.
+		newBlob, err = ReplaceField6([]byte{}, newTokenPayload)
+	} else {
+		newBlob, err = ReplaceField6(existingBlob, newTokenPayload)
+	}
+
+	if err != nil {
+		return fmt.Errorf("failed to modify protobuf: %w", err)
+	}
+
+	// D. Write back
+	_, err = db.Exec(updateSQL, targetKey, newBlob)
 	if err != nil {
 		return fmt.Errorf("failed to inject token: %w", err)
 	}
 
-	fmt.Printf("[Injector] Successfully injected token for key: %s\n", targetKey)
+	fmt.Printf("[Injector] Successfully injected token for key: %s (Size: %d -> %d)\n", targetKey, len(existingBlob), len(newBlob))
 	return nil
+
 }
 
 func copyFile(src, dst string) error {

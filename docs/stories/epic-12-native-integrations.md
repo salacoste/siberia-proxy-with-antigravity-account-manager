@@ -8,5 +8,9 @@
 *   **Terminal:** Provide easy shell configuration helpers.
 
 ## Stories
+*   [ ] **Story-33:** Implement Cloud Profiles (IDE Path Resolution).
+*   [ ] **Story-56:** System Tray Integration.
+
+
 *   [x] **Story-37:** Add Support for Cursor and Windsurf IDEs
 *   [ ] **Story-38:** Implement Terminal Shell Helper

@@ -40,3 +40,6 @@ apps/backend/.env
 apps/backend/server_bin
 build_log.txt
 apps/backend/frontend/dist/
+
+# Reference
+docs/ag-manager-ref/
