@@ -49,3 +49,16 @@ Provide a user interface in the **Settings** page to manage HTTPS inspection. Th
 ## Dev Notes
 -   Wails `wails generate module` might be needed after updating `app.go`.
 -   Polling or explicit refresh might be needed after "Install" to confirm Trust status.
+
+## QA Results
+
+### Review Date: 2026-01-05
+
+### Reviewed By: Quinn (Test Architect)
+
+- **Audit**: frontend/backend integration verified via code inspection. `CheckCertTrust` and `InstallCert` correctly bound. UI handles states.
+- **Verdict**: Approved.
+
+### Gate Status
+
+Gate: PASS → docs/qa/gates/epic-08.story-28-trust-ui.yml

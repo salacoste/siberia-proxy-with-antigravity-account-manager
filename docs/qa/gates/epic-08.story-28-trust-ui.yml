@@ -1,0 +1,8 @@
+schema: 1
+story: 'Epic-08.Story-28'
+gate: PASS
+status_reason: 'UI implementation verifies CA trust status and provides installation controls; confirmed via static verification and build success.'
+reviewer: 'Quinn'
+updated: '2026-01-05T05:45:00+03:00'
+top_issues: []
+waiver: { active: false }
