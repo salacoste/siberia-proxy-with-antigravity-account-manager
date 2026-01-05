@@ -40,3 +40,16 @@ To decrypt HTTPS traffic without browser warnings, the Root CA generated in Stor
 ## Dev Notes
 -   Command: `security add-trusted-cert -d -r trustRoot -k ~/Library/Keychains/login.keychain-db <ca_path>`
 -   Verify command works on modern macOS (Sequioa/Sonoma).
+
+## QA Results
+
+### Review Date: 2026-01-05
+
+### Reviewed By: Quinn (Test Architect)
+
+- **Audit**: `security` command arguments are correct for macOS. `CheckTrust` logic validated.
+- **Verdict**: Approved.
+
+### Gate Status
+
+Gate: PASS → docs/qa/gates/epic-08.story-26-cert-installation.yml

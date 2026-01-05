@@ -1,0 +1,8 @@
+schema: 1
+story: 'Epic-08.Story-25'
+gate: PASS
+status_reason: 'CA management logic correctly generates secure keys and is verified by unit tests.'
+reviewer: 'Quinn'
+updated: '2026-01-05T05:33:00+03:00'
+top_issues: []
+waiver: { active: false }

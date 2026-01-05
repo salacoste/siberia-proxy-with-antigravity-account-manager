@@ -40,3 +40,16 @@ Configure the `proxy` service to use the Root CA managed by `siberia/ca` to inte
 ## Dev Notes
 -   `goproxy` requires setting `proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)`
 -   `proxy.MitmChunkedResponse = true` might be needed for streaming?
+
+## QA Results
+
+### Review Date: 2026-01-05
+
+### Reviewed By: Quinn (Test Architect)
+
+- **Audit**: `MitmEnabled` config integration verified. `service.go` logic handles dynamic switching.
+- **Verdict**: Approved.
+
+### Gate Status
+
+Gate: PASS → docs/qa/gates/epic-08.story-27-mitm-logic.yml

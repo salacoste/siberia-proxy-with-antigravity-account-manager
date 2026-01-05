@@ -1,0 +1,8 @@
+schema: 1
+story: 'Epic-08.Story-27'
+gate: PASS
+status_reason: 'Proxy MitM configuration logic verified; dynamically enables interception based on config.'
+reviewer: 'Quinn'
+updated: '2026-01-05T05:33:00+03:00'
+top_issues: []
+waiver: { active: false }

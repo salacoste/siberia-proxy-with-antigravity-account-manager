@@ -1,0 +1,8 @@
+schema: 1
+story: 'Epic-08.Story-26'
+gate: PASS
+status_reason: 'MacOS certificate installation and trust verification logic implemented and verified.'
+reviewer: 'Quinn'
+updated: '2026-01-05T05:33:00+03:00'
+top_issues: []
+waiver: { active: false }

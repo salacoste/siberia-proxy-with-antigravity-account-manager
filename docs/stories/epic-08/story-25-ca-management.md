@@ -41,3 +41,16 @@ Implement the backend capability to generate, store, and retrieve the Root Certi
 - [x] All functional requirements met.
 - [x] Tests passed.
 - [x] Code follows patterns.
+
+## QA Results
+
+### Review Date: 2026-01-05
+
+### Reviewed By: Quinn (Test Architect)
+
+- **Audit**: Code reviewed. `EnsuraCA` logic is sound. Tests cover idempotency.
+- **Verdict**: Approved.
+
+### Gate Status
+
+Gate: PASS → docs/qa/gates/epic-08.story-25-ca-management.yml
