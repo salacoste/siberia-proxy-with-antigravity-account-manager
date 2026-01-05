@@ -1,7 +1,8 @@
 # Story-05: Implement Basic Request Forwarder (HTTP/SOCKS5)
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Draft
+**Status:** Released
+
 
 ## Goal
 Implement the core Forward Proxy listener that intercepts HTTP/HTTPS requests from local tools (Cursor, VSCode). This is the entry point for all traffic.

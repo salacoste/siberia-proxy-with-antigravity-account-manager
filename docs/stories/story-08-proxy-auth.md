@@ -1,7 +1,8 @@
 # Story-08: Implement Proxy Authentication (Bearer Token)
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Draft
+**Status:** Released
+
 
 ## Goal
 Secure the local proxy server so that only authorized clients (configured with a specific token) can use it. This prevents unauthorized usage if the proxy is exposed on a public interface (e.g., `0.0.0.0`).

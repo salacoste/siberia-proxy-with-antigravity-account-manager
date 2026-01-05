@@ -1,7 +1,8 @@
 # Story-43: Proxy Integration & Wiring
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Draft
+**Status:** Ready
+
 **Reference:** `docs/ag-ref-docs/feature-proxy-engine.md`
 
 ## Goal
