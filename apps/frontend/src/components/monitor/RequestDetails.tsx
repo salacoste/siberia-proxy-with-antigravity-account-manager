@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Share2, Copy, Check, Terminal, ExternalLink } from "lucide-react";
+import { Share2, Copy, Check, Terminal, ExternalLink, Code } from "lucide-react";
 import { useState } from "react";
 // @ts-ignore
 import { UploadSession, OpenProjectInIDE } from "../../../wailsjs/go/main/App";
@@ -11,6 +11,7 @@ import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
 import { Input } from "@/components/ui/input";
 import { DataViewer } from "./DataViewer";
 import { Separator } from "@/components/ui/separator";
+
 
 interface ProxyEvent {
     method: string;
@@ -34,6 +35,7 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
     const [sharing, setSharing] = useState(false);
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [curlCopied, setCurlCopied] = useState(false);
 
     // If no event, don't render anything (Sheet controls visibility via open prop)
     // But Sheet MUST be rendered to animate out? No, simple conditional is fine for now or keep generic.
@@ -57,6 +59,28 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         }
+    };
+
+    const generateCurl = () => {
+        if (!event) return;
+        let cmd = `curl -X ${event.method} "${event.url}"`;
+        if (event.req_headers) {
+            Object.entries(event.req_headers).forEach(([k, v]) => {
+                cmd += ` \\\n  -H "${k}: ${v}"`;
+            });
+        }
+        if (event.req_body) {
+            // Escape single quotes
+            const escapedBody = event.req_body.replace(/'/g, "'\\''");
+            cmd += ` \\\n  -d '${escapedBody}'`;
+        }
+        navigator.clipboard.writeText(cmd);
+        setCurlCopied(true);
+        setTimeout(() => setCurlCopied(false), 2000);
+    };
+
+    const copyBody = (body: string) => {
+        navigator.clipboard.writeText(body || "");
     };
 
     const openLink = () => {
@@ -101,6 +125,11 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                     </div>
                     {/* Action Bar */}
                     <div className="flex items-center gap-2 pt-2">
+                        <Button size="sm" variant="outline" onClick={generateCurl}>
+                            {curlCopied ? <Check className="mr-2 h-3 w-3" /> : <Code className="mr-2 h-3 w-3" />}
+                            {curlCopied ? "Copied" : "Copy cURL"}
+                        </Button>
+                        <Separator orientation="vertical" className="h-6" />
                         {shareUrl ? (
                             <div className="flex items-center gap-2 bg-muted rounded p-1 flex-1">
                                 <Input value={shareUrl} readOnly className="h-7 text-[10px] font-mono" />
@@ -142,12 +171,17 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                                 </div>
                                 <Separator />
                                 <div className="flex-1 flex flex-col space-y-2 min-h-0">
-                                    <h4 className="text-sm font-medium flex justify-between items-center">
-                                        Body
-                                        <span className="text-xs text-muted-foreground font-normal">
-                                            {event.req_body?.length || 0} bytes
-                                        </span>
-                                    </h4>
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="text-sm font-medium flex items-center gap-2">
+                                            Body
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {event.req_body?.length || 0} bytes
+                                            </span>
+                                        </h4>
+                                        <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => copyBody(event.req_body)}>
+                                            <Copy className="mr-1 h-3 w-3" /> Copy Body
+                                        </Button>
+                                    </div>
                                     <div className="flex-1 min-h-0">
                                         <DataViewer data={event.req_body} type="json" />
                                     </div>
@@ -166,12 +200,17 @@ export function RequestDetails({ event, onClose }: RequestDetailsProps) {
                                 </div>
                                 <Separator />
                                 <div className="flex-1 flex flex-col space-y-2 min-h-0">
-                                    <h4 className="text-sm font-medium flex justify-between items-center">
-                                        Body
-                                        <span className="text-xs text-muted-foreground font-normal">
-                                            {event.resp_body?.length || 0} bytes
-                                        </span>
-                                    </h4>
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="text-sm font-medium flex items-center gap-2">
+                                            Body
+                                            <span className="text-xs text-muted-foreground font-normal">
+                                                {event.resp_body?.length || 0} bytes
+                                            </span>
+                                        </h4>
+                                        <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => copyBody(event.resp_body)}>
+                                            <Copy className="mr-1 h-3 w-3" /> Copy Body
+                                        </Button>
+                                    </div>
                                     <div className="flex-1 min-h-0">
                                         <DataViewer data={event.resp_body} type="json" />
                                     </div>

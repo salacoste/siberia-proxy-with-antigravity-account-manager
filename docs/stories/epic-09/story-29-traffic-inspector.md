@@ -42,7 +42,25 @@ Develop a detailed inspection interface for the Proxy Monitor. When a user click
 - [x] Validated via build.
 - [x] Code follows standards (shadcn).
 
+### QA Fixes (2026-01-05)
+- Implemented `generateCurlCommand` and "Copy cURL" button.
+- Added "Copy Body" buttons to both Request and Response tabs.
+- Fixed lint warning (unused `toast`).
+
 ## Dev Notes
 -   Use `shadcn-ui` `Sheet` or `Dialog` component.
 -   Use `react-syntax-highlighter` or similar for body display? Or just `<pre>`.
 -   Ensure `ProxyRequestEvent` type in frontend matches the backend struct updated in Epic-08.
+
+## QA Results
+> [!CAUTION]
+> **Status: FAIL**
+> **Date:** 2026-01-05
+> **Reviewer:** Quinn (QA Agent)
+> **Gate:** [epic-09.story-29-traffic-inspector.yml](../../qa/gates/epic-09.story-29-traffic-inspector.yml)
+>
+> **Issues:**
+> 1. Missing "Copy as cURL" implementation.
+> 2. Missing "Copy Body" buttons.
+>
+> **Action:** Returned to Dev for fixes.
