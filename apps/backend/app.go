@@ -106,7 +106,7 @@ func NewApp(cfg *config.Manager) *App {
 
 	return &App{
 		config:           cfg,
-		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine),
+		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine, accounts.NewService(database, cfg)),
 		database:         database,
 		accountService:   accounts.NewService(database, cfg),
 		processService:   process.NewService(),

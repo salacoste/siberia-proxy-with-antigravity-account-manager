@@ -34,7 +34,7 @@ func TestMitmLogic(t *testing.T) {
 
 	// 3. Init Proxy Service
 	analyticsEngine := analytics.NewAnalyticsEngine()
-	_ = NewService(cfg, caSvc, analyticsEngine)
+	_ = NewService(cfg, caSvc, analyticsEngine, nil)
 
 	// Access the HandleConnect logic requires knowing how goproxy stores it.
 	// goproxy doesn't expose the HttpsHandler easily for inspection without mocking a request.

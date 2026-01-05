@@ -23,7 +23,7 @@ func BenchmarkProxyThroughput(b *testing.B) {
 
 	// Mock CA Service not needed for HTTP benchmark if MITM off
 	// But NewService needs it?
-	svc := NewService(cfg, nil, nil)
+	svc := NewService(cfg, nil, nil, nil)
 	svc.SkipWailsEvents = true // CRITICAL: Don't choke on Wails calls during bench
 
 	// Start Proxy

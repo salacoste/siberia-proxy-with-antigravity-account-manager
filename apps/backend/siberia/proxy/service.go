@@ -16,9 +16,13 @@ import (
 
 	"github.com/elazarl/goproxy"
 	"github.com/google/uuid"
+	"github.com/salacoste/siberia/siberia/accounts"
 	"github.com/salacoste/siberia/siberia/analytics"
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/proxy/handlers/claude"
+	"github.com/salacoste/siberia/siberia/proxy/handlers/openai"
+	"github.com/salacoste/siberia/siberia/proxy/upstream"
 	"github.com/salacoste/siberia/siberia/types"
 )
 
@@ -33,11 +37,20 @@ type Service struct {
 	TelemetryManager  *TelemetryManager
 	mu                sync.RWMutex
 	SkipWailsEvents   bool // For testing
+	openaiHandler     http.Handler
+	claudeHandler     http.Handler
 }
 
-func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine) *Service {
+func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine, accSvc *accounts.Service) *Service {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = true
+
+	// Initialize Upstream Client
+	geminiClient := upstream.NewGeminiClient(accSvc)
+
+	// Initialize Handlers
+	oaHandler := openai.NewHandler(geminiClient)
+	clHandler := claude.NewHandler(geminiClient)
 
 	svc := &Service{
 		proxy:             proxy,
@@ -47,6 +60,8 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 		BreakpointManager: NewBreakpointManager(),
 
 		TelemetryManager: NewTelemetryManager(1000, analyticsEngine), // Buffer 1000 events
+		openaiHandler:    oaHandler,
+		claudeHandler:    clHandler,
 	}
 
 	// Configure MitM if enabled
@@ -358,7 +373,25 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer s.TelemetryManager.analytics.DecrementActive()
 	}
 
-	// 2. Otherwise default to standard goproxy (Forward Proxy)
+	// 2. Handler Specific Routes (Story-43)
+	// OpenAI Chat Completions
+	if r.URL.Path == "/v1/chat/completions" && r.Method == "POST" {
+		// Log internal handling
+		// log.Printf("[Proxy] Handling OpenAI Request: %s", r.URL.Path)
+		// We still want to emit events? The handlers don't emit events automatically to our TelemetryManager.
+		// Detailed telemetry integration for internal handlers is a nice-to-have.
+		// For now, let's just serve.
+		s.openaiHandler.ServeHTTP(w, r)
+		return
+	}
+
+	// Claude Messages
+	if r.URL.Path == "/v1/messages" && r.Method == "POST" {
+		s.claudeHandler.ServeHTTP(w, r)
+		return
+	}
+
+	// 3. Otherwise default to standard goproxy (Forward Proxy)
 	s.proxy.ServeHTTP(w, r)
 }
 
