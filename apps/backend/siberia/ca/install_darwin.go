@@ -15,20 +15,19 @@ func (s *Service) InstallCert() error {
 		return fmt.Errorf("CA certificate not found at %s", certPath)
 	}
 
-	// Command: security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain <certPath>
-	// or user keychain. "login.keychain" is standard for user.
-	// Using /Library/Keychains/System.keychain requires sudo and makes it system-wide.
-	// Using login.keychain is easier but might not cover all use cases (System services).
-	// For a dev tool, login keychain is often sufficient.
-	// However, browsers usually respect the login keychain.
+	// Dynamic keychain detection
+	keychainPath := os.Getenv("HOME") + "/Library/Keychains/login.keychain-db"
+	if _, err := os.Stat(keychainPath); os.IsNotExist(err) {
+		// Fallback for older macOS
+		keychainPath = os.Getenv("HOME") + "/Library/Keychains/login.keychain"
+	}
 
-	// Let's try attempting to add to the login keychain first.
-	// Note: 'security' command might interactively prompt for password.
+	// Command: security add-trusted-cert -d -r trustRoot -k <keychain> <certPath>
+	// -d: Add to admin cert store (requires auth, but applies to system/admin level)
+	// -r trustRoot: Trust as a Root CA
+	// -k: Specific keychain
 
-	cmd := exec.Command("security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", os.Getenv("HOME")+"/Library/Keychains/login.keychain-db", certPath)
-	// Fallback to older path if -db doesn't exist? modern macOS uses .keychain-db.
-	// Actually, just omitting -k might default correctly or prompt.
-	// Let's try specific user keychain to be safe.
+	cmd := exec.Command("security", "add-trusted-cert", "-d", "-r", "trustRoot", "-k", keychainPath, certPath)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -38,9 +37,24 @@ func (s *Service) InstallCert() error {
 	return nil
 }
 
-// CheckTrust checks if the cert is trusted (simplified check)
+// CheckTrust checks if the cert is trusted using 'security verify-cert'
 func (s *Service) CheckTrust() bool {
-	// TODO: implement 'security dump-trust-settings' parsing or verify cert
-	// For now, return false to force "Install" button availability
-	return false
+	certPath := s.GetCAPath()
+	if _, err := os.Stat(certPath); os.IsNotExist(err) {
+		return false
+	}
+
+	// -c: Cert file
+	// -l: Leaf verification (sanity check)
+	// -L: Local cert checking (don't network check revocation, though for root CA irrelevant)
+	// Note: verifying a Root CA with verify-cert asks if it's trusted.
+	cmd := exec.Command("security", "verify-cert", "-c", certPath, "-l", "-L")
+
+	// We only care if the command succeeds (exit code 0)
+	if err := cmd.Run(); err != nil {
+		// e.g. "Cert Verify Failed: CSSMERR_TP_NOT_TRUSTED"
+		return false
+	}
+
+	return true
 }

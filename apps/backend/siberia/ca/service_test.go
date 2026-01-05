@@ -82,4 +82,9 @@ func TestEnsureCA(t *testing.T) {
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		t.Errorf("Key file was not recreated")
 	}
+
+	// 5. CheckTrust should default to false (requires OS install)
+	if svc.CheckTrust() {
+		t.Error("New CA should NOT be trusted by OS yet")
+	}
 }
