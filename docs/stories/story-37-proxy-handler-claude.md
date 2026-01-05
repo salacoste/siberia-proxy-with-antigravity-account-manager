@@ -1,7 +1,8 @@
 # Story-37: Claude Handler & Resilience Strategies
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Ready for Review
+**Status:** Released
+
 
 **Reference:** `docs/ag-ref-docs/feature-proxy-engine.md`
 
