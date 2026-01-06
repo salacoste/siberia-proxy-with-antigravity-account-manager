@@ -21,6 +21,7 @@ import (
 	"github.com/salacoste/siberia/siberia/ca"
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/claude"
+	"github.com/salacoste/siberia/siberia/proxy/handlers/gemini"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/openai"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/scripting"
@@ -44,6 +45,7 @@ type Service struct {
 	openaiHandler     http.Handler
 
 	claudeHandler http.Handler
+	geminiHandler http.Handler
 	MapLocal      *middleware.MapLocalMiddleware
 	ScriptEngine  *scripting.ScriptEngine
 }
@@ -58,6 +60,7 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 	// Initialize Handlers
 	oaHandler := openai.NewHandler(geminiClient)
 	clHandler := claude.NewHandler(geminiClient)
+	gmHandler := gemini.NewHandler(geminiClient)
 
 	svc := &Service{
 		proxy:             proxy,
@@ -70,6 +73,7 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 		openaiHandler:    oaHandler,
 
 		claudeHandler: clHandler,
+		geminiHandler: gmHandler,
 		MapLocal:      middleware.NewMapLocalMiddleware(),
 		ScriptEngine:  scripting.NewScriptEngine(),
 	}
@@ -447,6 +451,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Claude Messages
 	if r.URL.Path == "/v1/messages" && r.Method == "POST" {
 		s.claudeHandler.ServeHTTP(w, r)
+		return
+	}
+
+	// Native Gemini
+	if strings.Contains(r.URL.Path, "/v1beta/models/") && strings.Contains(r.URL.Path, ":") {
+		s.geminiHandler.ServeHTTP(w, r)
 		return
 	}
 

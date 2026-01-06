@@ -35,6 +35,10 @@ func NewService(database *db.Database, cfg *config.Manager) *Service {
 	}
 }
 
+func (s *Service) GetQuotaService() *quota.Service {
+	return s.quota
+}
+
 // ... existing code ...
 
 func (s *Service) ActivateAccount(id uint) error {

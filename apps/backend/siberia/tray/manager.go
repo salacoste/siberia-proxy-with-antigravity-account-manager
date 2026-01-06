@@ -6,6 +6,11 @@ import (
 
 // Manager handles the system tray
 // The struct fields are defined in platform_*.go to avoid importing systray on macOS
+type TrayItem struct {
+	// Opaque wrapper
+	Item interface{}
+}
+
 type Manager struct {
 	ctx           context.Context
 	OnToggleShow  func()
@@ -18,6 +23,9 @@ type Manager struct {
 	// Actually, Go doesn't allow splitting struct fields across files.
 	// We will use an interface{} or specific pointer that is platform dependent,
 	// OR better: we define 'trayState' in platform files and embed it.
+	// Quota Menus
+	QuotaMenus map[string]*TrayItem // Abstracted item
+
 	trayState
 }
 
@@ -43,4 +51,8 @@ func (m *Manager) Stop() {
 
 func (m *Manager) UpdateMenu(proxyActive bool) {
 	m.updateMenuImpl(proxyActive)
+}
+
+func (m *Manager) UpdateQuota(stats map[string]int32) {
+	m.updateQuotaImpl(stats)
 }

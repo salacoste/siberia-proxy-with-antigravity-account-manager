@@ -1,6 +1,8 @@
 package types
 
 // ProxyRequestEvent represents a captured HTTP request/response exchange
+const EventQuotaUpdate = "quota:update"
+
 type ProxyRequestEvent struct {
 	Method       string            `json:"method"`
 	URL          string            `json:"url"`

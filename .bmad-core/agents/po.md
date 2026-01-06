@@ -64,12 +64,16 @@ commands:
   - shard-doc {document} {destination}: run the task shard-doc against the optionally provided document to the specified destination
   - validate-story-draft {story}: |
       Run task validate-next-story against provided story.
+      CRITICAL: Ensure feature branch `antigravity/feat/{story-slug}` exists (create from main if missing).
       ROUTING:
-      - If Complex/New Architecture: Handoff to /architect for design.
-      - If Simple/Ready: Handoff to /dev for implementation.
+      - If Complex/New Architecture: Handoff to /architect for design (on feature branch).
+      - If Simple/Ready: Handoff to /dev for implementation (on feature branch).
   - accept-story {story}: |
       Validate "Definition of Done" (QA Gate passed?).
-      If valid: Mark story as Completed, Update Task List, and MERGE the feature branch to main.
+      If valid: 
+        1. Mark story as Completed & Update Task List.
+        2. MERGE `antigravity/feat/{story-slug}` into `main` with descriptive commit message (Feature/Story Title).
+        3. Delete feature branch.
       If invalid: Reject and Handoff to /dev.
   - yolo: Toggle Yolo Mode off on - on will skip doc section confirmations
   - exit: Exit (confirm)

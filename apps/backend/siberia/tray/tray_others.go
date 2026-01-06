@@ -88,3 +88,26 @@ func (m *Manager) updateMenuImpl(proxyActive bool) {
 		m.mToggle.Uncheck()
 	}
 }
+
+func (m *Manager) updateQuotaImpl(stats map[string]int32) {
+	// Initialize map if nil
+	if m.QuotaMenus == nil {
+		m.QuotaMenus = make(map[string]*TrayItem)
+	}
+
+	for model, pct := range stats {
+		label := fmt.Sprintf("%s: %d%%", model, pct)
+
+		if item, exists := m.QuotaMenus[model]; exists {
+			// Update existing
+			if menuItem, ok := item.Item.(*systray.MenuItem); ok {
+				menuItem.SetTitle(label)
+			}
+		} else {
+			// Create new
+			newItem := systray.AddMenuItem(label, "Quota Usage")
+			// Store opaque wrapper
+			m.QuotaMenus[model] = &TrayItem{Item: newItem}
+		}
+	}
+}

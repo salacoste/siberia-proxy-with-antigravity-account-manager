@@ -24,3 +24,7 @@ func (m *Manager) setupImpl() {
 func (m *Manager) updateMenuImpl(proxyActive bool) {
 	// No-op
 }
+
+func (m *Manager) updateQuotaImpl(stats map[string]int32) {
+	// No-op
+}

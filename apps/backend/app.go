@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/salacoste/siberia/siberia/accounts"
@@ -14,11 +15,13 @@ import (
 	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/logger"
+	"github.com/salacoste/siberia/siberia/mcp"
 	"github.com/salacoste/siberia/siberia/migration"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
+	"github.com/salacoste/siberia/siberia/quota"
 	"github.com/salacoste/siberia/siberia/share"
 	"github.com/salacoste/siberia/siberia/tray"
 	"github.com/salacoste/siberia/siberia/types"
@@ -49,6 +52,7 @@ type App struct {
 	updateService    *updater.UpdateService
 	trayManager      *tray.Manager
 	migrationService *migration.Service
+	mcpServer        *mcp.McpServer
 }
 
 // Version is the current application version
@@ -124,6 +128,9 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize Tray Manager
 	trayMgr := tray.NewManager()
 
+	// Initialize MCP Server
+	mcpSvc := mcp.NewServer(cfg)
+
 	return &App{
 		config:           cfg,
 		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine, accountSvc),
@@ -138,6 +145,7 @@ func NewApp(cfg *config.Manager) *App {
 		AnalyticsService: analyticsSvc,
 		trayManager:      trayMgr,
 		migrationService: migrationSvc,
+		mcpServer:        mcpSvc,
 	}
 }
 
@@ -259,15 +267,59 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	// Listen for Proxy Events to update Tray
-	// Real-world: The ProxyService should emit events, and we listen here.
-	// For MVP, we can assume manual updates or polling.
+	// Inject Context into Quota Service for event emission
+	if a.accountService != nil && a.accountService.GetQuotaService() != nil {
+		a.accountService.GetQuotaService().SetContext(ctx)
+	}
+
+	runtime.EventsOn(ctx, types.EventQuotaUpdate, func(optionalData ...interface{}) {
+		if len(optionalData) > 0 {
+			// Wails events come as []interface{}
+			// We need to marshal/unmarshal or assume structure?
+			// Actually, runtime.EventsEmit sends data.
+			// Let's assert map[string]interface{} or just handle the struct.
+			// Wait, EventQuotaUpdate emits *quota.Stats.
+			// Wails JS->Go might be different, but Go->Go is direct pass?
+			// No, Wails Event Bus serializes to JSON usually if crossing boundaries.
+			// But creating a Go-only listener might be cleaner with a direct hook.
+			// For now, let's assume we can cast if it's in-process.
+			// Actually, wails `EventsOn` is for JS-compat.
+			// Let's cast safely.
+			if stats, ok := optionalData[0].(*quota.Stats); ok {
+				a.trayManager.UpdateQuota(stats.Models)
+			} else {
+				// Fallback if serialization happened (unlikely for Go-Go in same process but possible)
+				// Log warning
+				// runtime.LogWarning(ctx, "Received invalid quota update event data")
+			}
+		}
+	})
 
 	// Start Proxy Service
 	if err := a.proxyService.Start(ctx); err != nil {
 		runtime.LogErrorf(a.ctx, "Failed to start proxy: %v", err)
 	}
 
-	runtime.LogInfo(a.ctx, fmt.Sprintf("Proxy started on port %d", a.config.Get().ProxyPort)) // Corrected to use a.config.Get().ProxyPort
+	runtime.LogInfo(a.ctx, fmt.Sprintf("Proxy started on port %d", a.config.Get().ProxyPort))
+
+	// Start MCP Server if enabled
+	mcpCfg := a.config.Get().ZaiMcpConfig
+	if mcpCfg.Enabled {
+		// If reusing main port, we might mount handler differently,
+		// but since Wails controls main http server, we likely need a separate goroutine if dedicated port,
+		// OR we rely on Wails binding (but that's not std http).
+		// For MVP: Start on dedicated port as planned in config.
+		port := mcpCfg.Port
+		if port == 0 {
+			port = 6200
+		}
+		go func() {
+			runtime.LogInfo(a.ctx, fmt.Sprintf("Starting MCP Server on :%d", port))
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", port), a.mcpServer); err != nil {
+				runtime.LogErrorf(a.ctx, "MCP Server failed: %v", err)
+			}
+		}()
+	}
 }
 
 // shutdown is called at application termination

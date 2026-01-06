@@ -2,6 +2,7 @@ package quota
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/salacoste/siberia/siberia/logger"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
@@ -18,6 +20,7 @@ const (
 
 type Service struct {
 	client *http.Client
+	ctx    context.Context
 }
 
 func NewService() *Service {
@@ -51,7 +54,18 @@ func (s *Service) FetchAccountStats(accessToken string, email string) (*Stats, e
 	}
 
 	logger.New("Quota").Info(fmt.Sprintf("[%s] Tier: %s, Models: %v", email, tierID, modelUsage))
+
+	// Emit Event if context is available
+	if s.ctx != nil {
+		runtime.EventsEmit(s.ctx, "quota:update", stats)
+	}
+
 	return stats, nil
+}
+
+// SetContext sets the context for event emission
+func (s *Service) SetContext(ctx context.Context) {
+	s.ctx = ctx
 }
 
 func (s *Service) loadProject(accessToken string) (string, string, error) {

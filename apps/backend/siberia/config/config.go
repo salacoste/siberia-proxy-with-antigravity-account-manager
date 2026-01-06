@@ -40,6 +40,14 @@ type AppConfig struct {
 	CloudEmail    string `json:"cloud_email"`
 	CloudLastSync string `json:"cloud_last_sync"` // RFC3339 Timestamp
 	CloudSyncKey  string `json:"cloud_sync_key"`  // 32-byte hex key for encrypting cloud blob
+
+	// MCP Server
+	ZaiMcpConfig ZaiMcpConfig `json:"zai_mcp_config"`
+}
+
+type ZaiMcpConfig struct {
+	Enabled bool `json:"enabled"`
+	Port    int  `json:"port"` // Optional, if 0 uses embedded or default
 }
 
 type Manager struct {
@@ -85,6 +93,10 @@ func NewManager() (*Manager, error) {
 			CloudLastSync:   "",
 			CloudSyncKey:    "",
 			AppDataDir:      appDir,
+			ZaiMcpConfig: ZaiMcpConfig{
+				Enabled: false,
+				Port:    6200,
+			},
 		},
 	}
 

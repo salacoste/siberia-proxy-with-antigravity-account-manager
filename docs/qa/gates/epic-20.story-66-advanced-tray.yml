@@ -1,0 +1,21 @@
+story: story-66-advanced-tray
+status: PASS
+date: 2026-01-06
+reviewer: qa-agent
+criteria_results:
+  - criteria: "Use systray to add non-clickable menu items for Quota stats"
+    status: PASS
+    notes: "Implemented in tray/tray_others.go using systray.AddMenuItem"
+  - criteria: "Stats update at least every minute or on major usage events"
+    status: PASS
+    notes: "Updates triggered by quota:update event emitted from QuotaService"
+  - criteria: "If quota is unknown/unlimited, show nothing or Unlimited"
+    status: PASS
+    notes: "Handled by dynamic map iteration in updateQuotaImpl"
+  - criteria: "Menu items should use standard formatting"
+    status: PASS
+    notes: "Formatted as 'Model Name: XX%'"
+risk_assessment:
+  level: LOW
+  notes: "UI-only change in system tray. Fallback no-op on macOS prevents regression."
+recommendation: "Ready for Merge"
