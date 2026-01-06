@@ -14,6 +14,7 @@ import (
 	"github.com/salacoste/siberia/siberia/db"
 	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/logger"
+	"github.com/salacoste/siberia/siberia/migration"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
 	"github.com/salacoste/siberia/siberia/proxy"
@@ -47,6 +48,7 @@ type App struct {
 	AnalyticsService *analytics.AnalyticsService
 	updateService    *updater.UpdateService
 	trayManager      *tray.Manager
+	migrationService *migration.Service
 }
 
 // Version is the current application version
@@ -112,6 +114,9 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize Account Service
 	accountSvc := accounts.NewService(database, cfg)
 
+	// Initialize Migration Service
+	migrationSvc := migration.NewService(accountSvc)
+
 	// Initialize Update Service
 	// TODO: Get repo from config or hardcode for now
 	updateSvc := updater.NewUpdateService(Version, "salacoste/siberia-proxy-with-antigravity-account-manager")
@@ -132,7 +137,47 @@ func NewApp(cfg *config.Manager) *App {
 		cloudService:     cloudSvc,
 		AnalyticsService: analyticsSvc,
 		trayManager:      trayMgr,
+		migrationService: migrationSvc,
 	}
+}
+
+// ... existing code ...
+
+// === Migration API ===
+
+// CheckLegacyData checks if there are legacy accounts to import
+func (a *App) CheckLegacyData() (migration.LegacyStatus, error) {
+	if a.migrationService == nil {
+		return migration.LegacyStatus{}, fmt.Errorf("migration service not initialized")
+	}
+	return a.migrationService.CheckLegacyData()
+}
+
+// PerformLegacyImport executes the import
+func (a *App) PerformLegacyImport() (int, error) {
+	if a.migrationService == nil {
+		return 0, fmt.Errorf("migration service not initialized")
+	}
+	return a.migrationService.PerformImport()
+}
+
+// OpenProjectInIDE opens the current working directory in the configured IDE
+func (a *App) OpenProjectInIDE() error {
+	// 1. Get Configured IDE
+	target := a.config.Get().TargetIDE
+	if target == "" {
+		target = "cursor" // Default to Cursor if not set? Or vscode.
+	}
+
+	// 2. Get Current Working Directory (Project Root)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	// 3. Open
+	opener := ide.NewOpener()
+	return opener.Open(target, cwd, 0)
 }
 
 // InMemoryProvider is a fallback for when keys are missing
@@ -406,24 +451,4 @@ func (a *App) GetScript() (ScriptState, error) {
 		Code:   a.proxyService.ScriptEngine.Script,
 		Active: a.proxyService.ScriptEngine.Active,
 	}, nil
-}
-
-// OpenProjectInIDE opens the current working directory in the configured IDE
-
-func (a *App) OpenProjectInIDE() error {
-	// 1. Get Configured IDE
-	target := a.config.Get().TargetIDE
-	if target == "" {
-		target = "cursor" // Default to Cursor if not set? Or vscode.
-	}
-
-	// 2. Get Current Working Directory (Project Root)
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	// 3. Open
-	opener := ide.NewOpener()
-	return opener.Open(target, cwd, 0)
 }

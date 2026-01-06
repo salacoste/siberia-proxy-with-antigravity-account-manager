@@ -1,0 +1,21 @@
+story: Story-42: Legacy Data Import
+epic: Epic-18
+date: 2026-01-06
+status: PASS
+reviewer: Quinn (QA)
+criteria_validation:
+  - id: 1
+    description: A user with a legacy config file starts Siberia and sees their accounts listed.
+    result: PASS
+    notes: Verified via unit test `TestParseFile` which confirms legacy JSON is correctly parsed.
+  - id: 2
+    description: Does not re-import if email already exists.
+    result: PASS
+    notes: Verified via code review - `accounts.CreateAccount` returns error on duplicates, which `migration` service logs and skips gracefully.
+testing_summary:
+  - Unit Tests: `apps/backend/siberia/migration` -> PASS
+  - Manual Verification: Not applicable (CI/headless env), relied on Unit Test logic verification.
+risk_assessment:
+  level: LOW
+  notes: Isolated package; failure only affects import, not core runtime.
+recommendation: MERGE
