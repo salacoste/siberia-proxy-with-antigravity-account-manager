@@ -44,6 +44,8 @@ jobs:
 
     - name: Build
       working-directory: ./apps/backend
+      env:
+        CGO_ENABLED: 1
       run: wails build -tags webkit2_41 -o siberia-${{ runner.os }}
 
     # Rename output for Windows to include .exe if wails doesn't automatically do it cleanly with -o
