@@ -37,12 +37,13 @@ type App struct {
 	database         *db.Database
 	processService   *process.Service
 	injectionService *injection.Service
-	updaterService   *updater.Service
+	updaterService   *updater.UpdateService
 	accountService   *accounts.Service
 	caService        *ca.Service
 	shareService     *share.Service
 	cloudService     *cloud.Service
 	AnalyticsService *analytics.AnalyticsService
+	updateService    *updater.UpdateService
 }
 
 // Version is the current application version
@@ -105,14 +106,21 @@ func NewApp(cfg *config.Manager) *App {
 	cloudLog := logger.New("CLOUD")
 	cloudSvc := cloud.NewService(cfg, cloudLog)
 
+	// Initialize Account Service
+	accountSvc := accounts.NewService(database, cfg)
+
+	// Initialize Update Service
+	// TODO: Get repo from config or hardcode for now
+	updateSvc := updater.NewUpdateService(Version, "salacoste/siberia-proxy-with-antigravity-account-manager")
+
 	return &App{
 		config:           cfg,
-		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine, accounts.NewService(database, cfg)),
+		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine, accountSvc),
 		database:         database,
-		accountService:   accounts.NewService(database, cfg),
+		accountService:   accountSvc,
 		processService:   process.NewService(),
 		injectionService: injection.NewService(),
-		updaterService:   updater.NewService(Version),
+		updaterService:   updateSvc,
 		caService:        caSvc,
 		shareService:     shareSvc,
 		cloudService:     cloudSvc,
@@ -241,7 +249,11 @@ func (a *App) CheckCertTrust() bool {
 }
 
 // CheckForUpdates checks for updates
-func (a *App) CheckForUpdates() updater.UpdateInfo {
+// This implementation delegates to the service
+func (a *App) CheckForUpdates() (*updater.UpdateInfo, error) {
+	if a.updaterService == nil {
+		return nil, fmt.Errorf("update service not initialized")
+	}
 	return a.updaterService.CheckForUpdates()
 }
 

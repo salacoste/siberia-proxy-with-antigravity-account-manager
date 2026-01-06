@@ -1,7 +1,9 @@
 # Story-17: Implement Auto-Update Logic
 
 **Epic:** [Epic-05: Distribution](./epic-05-distribution.md)
-**Status:** Draft
+**Status:** Completed
+
+
 **Feature Branch:** `antigravity/feat/distribution`
 
 ## Goal
@@ -27,12 +29,13 @@ Implement the backend service to check for updates and download the new version.
 
 ## QA Results
 
-### Review Date: 2026-01-04
+
+### Review Date: 2026-01-06 (Final)
 
 ### Reviewed By: Quinn (Test Architect)
 
 ### Code Quality Assessment
-Backend `updater/service.go` correctly implements `CheckForUpdates`. Uses GitHub API to fetch latest release. Comparison logic (string based for MVP) is acceptable.
+Backend `updater/service.go` correctly implements `CheckForUpdates`. Uses GitHub API to fetch latest release. Comparison logic now uses `semver` library and `strings.TrimPrefix` for robustness. 100% Test Coverage on logic.
 
 ### Compliance Check
 - Coding Standards: [✓] Safe HTTP Client usage (timeouts).

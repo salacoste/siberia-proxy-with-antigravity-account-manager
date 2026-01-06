@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Masterminds/semver/v3"
 )
 
-// UpdateInfo holds information about the latest available release
 type UpdateInfo struct {
 	Available      bool   `json:"available"`
 	CurrentVersion string `json:"current_version"`
@@ -18,73 +19,92 @@ type UpdateInfo struct {
 	Error          string `json:"error,omitempty"`
 }
 
-// Service handles update checks
-type Service struct {
-	CurrentVersion string
-	RepoOwner      string
-	RepoName       string
-	APIURL         string // Defaults to https://api.github.com
+type UpdateService struct {
+	currentVersion string
+	githubRepo     string // format: "owner/repo"
+	apiURL         string // Base URL for GitHub API (can be overridden for tests)
+	client         *http.Client
 }
 
-// NewService creates a new updater service
-func NewService(currentVersion string) *Service {
-	// Default to local repo for now
-	return &Service{
-		CurrentVersion: currentVersion,
-		RepoOwner:      "salacoste",
-		RepoName:       "siberia",
-		APIURL:         "https://api.github.com",
+func NewUpdateService(currentVersion, githubRepo string) *UpdateService {
+	// Normalize version
+	v := strings.TrimPrefix(currentVersion, "v")
+
+	return &UpdateService{
+		currentVersion: v,
+		githubRepo:     githubRepo,
+		apiURL:         "https://api.github.com",
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
 	}
 }
 
-// ...
+// CheckForUpdates queries GitHub for the latest release
+func (s *UpdateService) CheckForUpdates() (*UpdateInfo, error) {
+	url := fmt.Sprintf("%s/repos/%s/releases/latest", s.apiURL, s.githubRepo)
 
-// GitHubRelease represents the minimal structure of the GitHub Release API response
-type GitHubRelease struct {
-	TagName string `json:"tag_name"`
-	Body    string `json:"body"`
-	HtmlUrl string `json:"html_url"`
-}
-
-// CheckForUpdates queries the GitHub API for the latest release
-func (s *Service) CheckForUpdates() UpdateInfo {
-	url := fmt.Sprintf("%s/repos/%s/%s/releases/latest", s.APIURL, s.RepoOwner, s.RepoName)
-
-	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return UpdateInfo{Error: "Failed to create request: " + err.Error()}
+		return nil, err
 	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	// Important: Add User-Agent for GitHub API
+	req.Header.Set("User-Agent", "Siberia-Proxy-Updater")
 
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
-		return UpdateInfo{Error: "Network error: " + err.Error()}
+		return nil, fmt.Errorf("failed to check for updates: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return UpdateInfo{Error: fmt.Sprintf("GitHub API returned status: %d", resp.StatusCode)}
+		return nil, fmt.Errorf("github api returned status: %d", resp.StatusCode)
 	}
 
-	var release GitHubRelease
+	var release struct {
+		TagName string `json:"tag_name"`
+		Body    string `json:"body"`
+		HTMLURL string `json:"html_url"`
+	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return UpdateInfo{Error: "Failed to parse release info"}
+		return nil, fmt.Errorf("failed to parse github response: %w", err)
 	}
 
-	latest := strings.TrimPrefix(release.TagName, "v")
-	current := strings.TrimPrefix(s.CurrentVersion, "v")
+	latestVerStr := strings.TrimPrefix(release.TagName, "v")
 
-	// Simple string comparison for MVP.
-	// In production, use "github.com/Masterminds/semver/v3"
-	// But since this is a desktop app, let's keep dependencies low if possible or just do simple check.
-	// Actually, just != check is enough to say "Update Available" if we assume strictly increasing tags.
-	updateAvailable := latest != current
+	currentV, err := semver.NewVersion(s.currentVersion)
+	if err != nil {
+		// If current version is dev/invalid, assume update is available if tag exists
+		return &UpdateInfo{
+			Available:      true,
+			CurrentVersion: s.currentVersion,
+			LatestVersion:  release.TagName,
+			DownloadURL:    release.HTMLURL,
+			ReleaseNotes:   release.Body,
+			Error:          "Current version invalid (dev build?)",
+		}, nil
+	}
 
-	return UpdateInfo{
-		Available:      updateAvailable,
-		CurrentVersion: s.CurrentVersion,
+	latestV, err := semver.NewVersion(latestVerStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse remote version: %w", err)
+	}
+
+	if latestV.GreaterThan(currentV) {
+		return &UpdateInfo{
+			Available:      true,
+			CurrentVersion: s.currentVersion,
+			LatestVersion:  release.TagName,
+			DownloadURL:    release.HTMLURL,
+			ReleaseNotes:   release.Body,
+		}, nil
+	}
+
+	return &UpdateInfo{
+		Available:      false,
+		CurrentVersion: s.currentVersion,
 		LatestVersion:  release.TagName,
-		DownloadURL:    release.HtmlUrl, // Point to release page for manual download (MVP Safety)
-		ReleaseNotes:   release.Body,
-	}
+	}, nil
 }

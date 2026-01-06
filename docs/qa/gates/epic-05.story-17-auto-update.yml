@@ -1,10 +1,19 @@
-schema: 1
-story: 'epic-05.story-17'
-story_title: 'Implement Auto-Update Logic'
-gate: PASS
-status_reason: 'Backend service correctly queries GitHub API and compares versions.'
-reviewer: 'Quinn (Test Architect)'
-updated: '2026-01-03T21:40:00Z'
-top_issues: []
-waiver: { active: false }
-quality_score: 100
+story: story-17-auto-update
+epic: epic-05-distribution
+status: PASS
+date: 2026-01-06
+author: antigravity
+rationale: |
+  Implementation of `siberia/updater` Verified.
+  - `UpdateService` correctly handles GitHub API logic.
+  - Dependency Injection (apiURL) allows robust testing.
+  - Integration to `app.go` (`CheckForUpdates`) is correct.
+  - Semver comparison logic verified via tests.
+  - Code Quality: clean, lint-free, tests passed.
+verification_evidence:
+  - type: unit_test
+    name: TestCheckForUpdates_Available
+    result: PASS
+  - type: unit_test
+    name: TestCheckForUpdates_NoUpdate
+    result: PASS

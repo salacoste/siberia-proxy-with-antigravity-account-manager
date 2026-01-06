@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.4
 
 require (
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/dop251/goja v0.0.0-20251201205617-2bb4c724c0f9
 	github.com/elazarl/goproxy v1.7.2
 	github.com/glebarez/go-sqlite v1.22.0

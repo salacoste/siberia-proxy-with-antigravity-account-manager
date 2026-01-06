@@ -7,6 +7,13 @@ import (
 	"testing"
 )
 
+// Helper struct for mocking response
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+	Body    string `json:"body"`
+	HtmlUrl string `json:"html_url"`
+}
+
 func TestCheckForUpdates_Available(t *testing.T) {
 	// Mock GitHub API
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -23,14 +30,13 @@ func TestCheckForUpdates_Available(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	svc := &Service{
-		CurrentVersion: "v1.2.0",
-		RepoOwner:      "test",
-		RepoName:       "repo",
-		APIURL:         ts.URL,
-	}
+	svc := NewUpdateService("v1.2.0", "test/repo")
+	svc.apiURL = ts.URL // Inject mock server URL
 
-	info := svc.CheckForUpdates()
+	info, err := svc.CheckForUpdates()
+	if err != nil {
+		t.Fatalf("CheckForUpdates failed: %v", err)
+	}
 
 	if !info.Available {
 		t.Errorf("Expected update available, got false")
@@ -54,14 +60,13 @@ func TestCheckForUpdates_NoUpdate(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	svc := &Service{
-		CurrentVersion: "v1.2.0",
-		RepoOwner:      "test",
-		RepoName:       "repo",
-		APIURL:         ts.URL,
-	}
+	svc := NewUpdateService("v1.2.0", "test/repo")
+	svc.apiURL = ts.URL
 
-	info := svc.CheckForUpdates()
+	info, err := svc.CheckForUpdates()
+	if err != nil {
+		t.Fatalf("CheckForUpdates failed: %v", err)
+	}
 
 	if info.Available {
 		t.Errorf("Expected no update available, got true")
