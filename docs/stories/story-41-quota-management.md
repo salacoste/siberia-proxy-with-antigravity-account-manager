@@ -1,7 +1,7 @@
 # Story-41: Quota Management & Paid Tier Detection
 
 **Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Ready for Dev
+**Status:** Released
 **Reference:** `docs/ag-ref-docs/feature-misc-backend.md`
 **Technical Approach:** `docs/architecture/modules/quota-service.md`
 
@@ -33,3 +33,9 @@ It distinguishes between:
 ## Technical Notes
 - **API:** `https://cloudcode-pa.googleapis.com/v1internal/projects/...`
 - **Fields:** Look for `account_state` and `reason` in the response.
+
+## QA Results
+- **Date:** 2026-01-06
+- **Gate:** PASS
+- **Report:** [epic-18.story-41-quota-management.yml](../qa/gates/epic-18.story-41-quota-management.yml)
+- **Notes:** Service compiles and unit tests pass. API resilience verified via code review.

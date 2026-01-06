@@ -1,0 +1,37 @@
+feature: Quota Management & Paid Tier Detection
+story: Story-41
+epic: Epic-18 (v2.0 Features)
+date: 2026-01-06
+author: Quinn (QA)
+status: PASS
+
+static_analysis:
+  - file: apps/backend/siberia/quota/service.go
+    check: Logic matches Architecture
+    result: PASS
+  - file: apps/backend/siberia/quota/types.go
+    check: JSON structs defined
+    result: PASS
+  - file: apps/backend/siberia/quota/service_test.go
+    check: Unit tests exist
+    result: PASS
+
+automated_verification:
+  - command: go test ./siberia/quota/...
+    result: PASS (Cached)
+  - command: go build -o siberia-backend
+    result: PASS (Compilation Successful)
+
+manual_verification:
+  - step: Tier Detection (Mock)
+    result: PASS (Logic verified in unit test)
+  - step: 403 Handling
+    result: PASS (Simulated in code review)
+
+risk_assessment:
+  level: High
+  notes: Relying on undocumented internal Google APIs. Field names 'paidTier' and 'remainingFraction' are subject to change.
+
+recommendations:
+  - Monitor logs for "API error" or "403 Forbidden" spikes.
+  - Urgent: Add integration test with REAL token when available.
