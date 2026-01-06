@@ -53,3 +53,5 @@ export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
 export function UpdateAppConfig(arg1:config.AppConfig):Promise<void>;
 
 export function UploadSession(arg1:types.ProxyRequestEvent):Promise<string>;
+export function UpdateScript(arg1:string,arg2:boolean):Promise<void>;
+export function GetScript():Promise<any>;

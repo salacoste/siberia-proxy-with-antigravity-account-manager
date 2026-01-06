@@ -22,7 +22,10 @@ import (
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/claude"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/openai"
+	"github.com/salacoste/siberia/siberia/proxy/middleware"
+	"github.com/salacoste/siberia/siberia/proxy/scripting"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
+
 	"github.com/salacoste/siberia/siberia/types"
 )
 
@@ -38,7 +41,10 @@ type Service struct {
 	mu                sync.RWMutex
 	SkipWailsEvents   bool // For testing
 	openaiHandler     http.Handler
-	claudeHandler     http.Handler
+
+	claudeHandler http.Handler
+	MapLocal      *middleware.MapLocalMiddleware
+	ScriptEngine  *scripting.ScriptEngine
 }
 
 func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine, accSvc *accounts.Service) *Service {
@@ -61,7 +67,10 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 
 		TelemetryManager: NewTelemetryManager(1000, analyticsEngine), // Buffer 1000 events
 		openaiHandler:    oaHandler,
-		claudeHandler:    clHandler,
+
+		claudeHandler: clHandler,
+		MapLocal:      middleware.NewMapLocalMiddleware(),
+		ScriptEngine:  scripting.NewScriptEngine(),
 	}
 
 	// Configure MitM if enabled
@@ -163,7 +172,19 @@ func (s *Service) registerHandlers() {
 			}
 		}
 
+		// === Scripting Logic (OnRequest) ===
+		if s.ScriptEngine != nil && s.ScriptEngine.Active {
+			modReq, err := s.ScriptEngine.RunOnRequest(r)
+			if err != nil {
+				log.Printf("[Scripting] Error in onRequest: %v", err)
+			} else {
+				r = modReq
+			}
+		}
+		// ===================================
+
 		// === Breakpoint Logic ===
+
 		if s.BreakpointManager.ShouldPause(r) {
 			// Blocking call!
 			mod, ok := s.BreakpointManager.PauseRequest(r, reqBody)
@@ -224,8 +245,20 @@ func (s *Service) registerHandlers() {
 			respBody = string(truncate(bodyBytes, 4096))
 		}
 
+		// === Scripting Logic (OnResponse) ===
+		if s.ScriptEngine != nil && s.ScriptEngine.Active && resp != nil {
+			modResp, err := s.ScriptEngine.RunOnResponse(resp)
+			if err != nil {
+				log.Printf("[Scripting] Error in onResponse: %v", err)
+			} else {
+				resp = modResp
+			}
+		}
+		// ===================================
+
 		// Emit Log
 		if resp != nil {
+
 			connID := ""
 			if data, ok := ctx.UserData.(map[string]interface{}); ok {
 				if id, ok := data["connID"].(string); ok {
@@ -317,7 +350,32 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.Header.Del("Authorization")
 	}
 
+	// 0.5 Map Local Middleware
+	// Check if this request should be served from a local file
+	if s.MapLocal != nil {
+		req, resp := s.MapLocal.HandleRequest(r, nil) // ctx can be nil for now or we plumb it
+		if resp != nil {
+			// Middleware served the response
+			for k, vv := range resp.Header {
+				for _, v := range vv {
+					w.Header().Add(k, v)
+				}
+			}
+			w.WriteHeader(resp.StatusCode)
+			if resp.Body != nil {
+				io.Copy(w, resp.Body)
+				resp.Body.Close()
+			}
+			// Emit Log for Local Map
+			s.emitFullEvent(r, resp, time.Now(), "[Map Local]", "[Mapped Content]", uuid.New().String())
+			return
+		}
+		// If req modified, use it
+		r = req
+	}
+
 	// 1. Check if z.ai is enabled and if request is "Reverse Proxy" style
+
 	if s.config.ZaiEnabled {
 		if r.URL.Scheme == "" || r.URL.Host == "" {
 			rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200}

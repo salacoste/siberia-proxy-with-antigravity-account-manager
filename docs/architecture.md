@@ -1,8 +1,9 @@
 # Architecture: Siberia Proxy & Antigravity Account Manager
 
-**Version:** 4.0
-**Status:** Approved
+**Version:** 4.1
+**Status:** In Progress
 **Stack:** Go (Backend) + Wails v2 (Bridge) + React/Vite (Frontend)
+
 
 ## 1. High-Level Overview
 
@@ -37,7 +38,10 @@ The system is a unified desktop application where:
     1.  `Recovery`: Panic safety.
     2.  `Auth`: Bearer token validation (Configurable).
     3.  `AccessLog`: Info-level logging (Method/URL/Duration).
-    4.  `Recorder`: Payload capture -> SQLite (Async Buffer).
+    4.  `MapLocal`: Serving local files for matched routes (Middleware).
+    5.  `Scripting`: JS Hooks (`OnRequest`/`OnResponse`) via `goja`.
+    6.  `Recorder`: Payload capture -> SQLite (Async Buffer).
+
 *   **Routing:**
     *   `/v1/messages` -> `handlers.HandleAnthropic`
     *   `/v1beta/*` -> `handlers.HandleGemini`
@@ -54,7 +58,12 @@ The system is a unified desktop application where:
     3.  **Manipulate:** Open target SQLite DB (`state.vscdb`), decode Protobuf blob, replace `accessToken`, `refreshToken`, `expiry`.
     4.  **Respawn:** Relaunch application.
 
-## 4. Frontend Architecture (Antigravity)
+    4.  **Respawn:** Relaunch application.
+
+### 3.4 Advanced Inspection (`siberia/modules/inspection`)
+*   **Script Engine:** `dop251/goja` (Pure Go JS Runtime).
+*   **Map Local:** Stream local file content with `http.ServeContent` for correct MIME types.
+
 
 ### 4.1 State Management
 *   **Zustand Stores:**

@@ -7,8 +7,12 @@ import MonitorPage from './pages/MonitorPage';
 import ProxyPage from './pages/ProxyPage';
 import CloudPage from './pages/CloudPage';
 import SettingsPage from './pages/SettingsPage';
+import MapLocalPage from './pages/MapLocalPage';
+import ScriptingPage from './pages/ScriptingPage';
 import { useConfigStore } from './stores/useConfigStore';
+
 import { useTheme } from './stores/useTheme';
+
 import { TrafficProvider } from './contexts/TrafficContext';
 import { SaveWindowSize } from '../wailsjs/go/main/App';
 
@@ -54,7 +58,12 @@ function App() {
                             <Route path="monitor" element={<MonitorPage />} />
                             <Route path="proxy" element={<ProxyPage />} />
                             <Route path="/cloud" element={<CloudPage />} />
+                            <Route path="/map-local" element={<MapLocalPage />} />
+                            <Route path="/scripting" element={<ScriptingPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
+
+
+
                             {/* Fallback */}
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Route>

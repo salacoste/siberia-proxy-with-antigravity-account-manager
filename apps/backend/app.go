@@ -16,6 +16,7 @@ import (
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
 	"github.com/salacoste/siberia/siberia/proxy"
+	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/share"
 	"github.com/salacoste/siberia/siberia/types"
 	"github.com/salacoste/siberia/siberia/updater"
@@ -24,8 +25,8 @@ import (
 
 // RegisterTypes is a dummy method to force Wails to generate bindings for these types
 // They are used in Events but not in other methods, so Wails v2 skips them otherwise.
-func (a *App) RegisterTypes() (proxy.PendingRequest, proxy.WebSocketFrame, types.ProxyRequestEvent) {
-	return proxy.PendingRequest{}, proxy.WebSocketFrame{}, types.ProxyRequestEvent{}
+func (a *App) RegisterTypes() (proxy.PendingRequest, proxy.WebSocketFrame, types.ProxyRequestEvent, middleware.MapLocalRule) {
+	return proxy.PendingRequest{}, proxy.WebSocketFrame{}, types.ProxyRequestEvent{}, middleware.MapLocalRule{}
 }
 
 // App struct
@@ -271,6 +272,36 @@ func (a *App) ResumeRequest(id string, mod proxy.ModifiedRequest) bool {
 	return a.proxyService.BreakpointManager.ResumeRequest(id, mod)
 }
 
+// === Map Local API ===
+
+// AddMapLocalRule adds a rule to map a URL to a local file
+func (a *App) AddMapLocalRule(rule middleware.MapLocalRule) error {
+	if a.proxyService.MapLocal == nil {
+		return fmt.Errorf("map local middleware not initialized")
+	}
+	return a.proxyService.MapLocal.AddRule(rule)
+}
+
+// DeleteMapLocalRule removes a rule
+func (a *App) DeleteMapLocalRule(id string) {
+	if a.proxyService.MapLocal != nil {
+		a.proxyService.MapLocal.RemoveRule(id)
+	}
+}
+
+// GetMapLocalRules returns all active rules
+func (a *App) GetMapLocalRules() []middleware.MapLocalRule {
+	if a.proxyService.MapLocal == nil {
+		return []middleware.MapLocalRule{}
+	}
+	// Extract rules from sync.Map
+	var rules []middleware.MapLocalRule
+	a.proxyService.MapLocal.RangeRules(func(r middleware.MapLocalRule) {
+		rules = append(rules, r)
+	})
+	return rules
+}
+
 // UploadSession exports a request as HAR and uploads it
 func (a *App) UploadSession(event types.ProxyRequestEvent) (string, error) {
 	return a.shareService.UploadSession(event)
@@ -311,7 +342,35 @@ func (a *App) CloudGetStatus() map[string]interface{} {
 	}
 }
 
+// === Scripting API ===
+
+// UpdateScript updates the traffic interception script
+func (a *App) UpdateScript(script string, active bool) error {
+	if a.proxyService.ScriptEngine == nil {
+		return fmt.Errorf("script engine not initialized")
+	}
+	a.proxyService.ScriptEngine.UpdateScript(script, active)
+	return nil
+}
+
+type ScriptState struct {
+	Code   string `json:"code"`
+	Active bool   `json:"active"`
+}
+
+// GetScript returns the current script and active state
+func (a *App) GetScript() (ScriptState, error) {
+	if a.proxyService.ScriptEngine == nil {
+		return ScriptState{}, fmt.Errorf("script engine not initialized")
+	}
+	return ScriptState{
+		Code:   a.proxyService.ScriptEngine.Script,
+		Active: a.proxyService.ScriptEngine.Active,
+	}, nil
+}
+
 // OpenProjectInIDE opens the current working directory in the configured IDE
+
 func (a *App) OpenProjectInIDE() error {
 	// 1. Get Configured IDE
 	target := a.config.Get().TargetIDE

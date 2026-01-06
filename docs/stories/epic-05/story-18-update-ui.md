@@ -2,36 +2,22 @@
 
 **Epic:** [Epic-05: Distribution](./epic-05-distribution.md)
 **Status:** Draft
-**Feature Branch:** `antigravity/feat/distribution`
 
 ## Goal
-Frontend UI to expose update status.
+Notify the user when a new update is available and facilitate the download process.
 
 ## Tasks
-- [ ] **Task 1: Settings UI**
-    - [ ] Add "Check for Updates" button in `SettingsPage`.
-    - [ ] Display Current Version (from Wails `GetAppConfig` or runtime).
-- [ ] **Task 2: Update Notification**
-    - [ ] If update available: Show Toast or Badge.
-    - [ ] Click -> Triggers `Download` or `OpenBrowser`.
+- [ ] **Task 1: Update Store**
+    - [ ] Create `useUpdateStore` (Zustand).
+    - [ ] State: `available`, `downloading`, `ready`, `error`.
+- [ ] **Task 2: UI Components**
+    - [ ] Add "Check for Updates" button in `/settings`.
+    - [ ] Add Global Toast/Banner: "New Version v1.x.x Available".
+    - [ ] Add Download Progress Bar dialog.
+- [ ] **Task 3: Wiring**
+    - [ ] Connect to `UpdateService` backend events (`update:status`, `update:progress`).
 
 ## Acceptance Criteria
-- [ ] User can manually check for updates.
-- [ ] UI reflects "Up to Date" or "Update Available".
-
-## QA Results
-
-### Review Date: 2026-01-04
-
-### Reviewed By: Quinn (Test Architect)
-
-### Code Quality Assessment
-Frontend `SettingsPage.tsx` correctly calls `CheckForUpdates` and handles the response. UI Feedback (Toasts) is appropriate. Wails Model synchronization update was verified.
-
-### Compliance Check
-- Coding Standards: [✓] React Hooks / Async handling.
-- All ACs Met: [✓] UI Update flow verified.
-
-### Gate Status
-Gate: PASS → docs/qa/gates/epic-05.story-18-update-ui.yml
-
+- [ ] Application checks for updates on launch.
+- [ ] "Check Now" button works.
+- [ ] User can click "Update" to start the process.

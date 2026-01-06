@@ -97,3 +97,11 @@ export function UpdateAppConfig(arg1) {
 export function UploadSession(arg1) {
   return window['go']['main']['App']['UploadSession'](arg1);
 }
+
+export function UpdateScript(arg1, arg2) {
+  return window['go']['main']['App']['UpdateScript'](arg1, arg2);
+}
+
+export function GetScript() {
+  return window['go']['main']['App']['GetScript']();
+}

@@ -23,6 +23,6 @@
     -   Compare `CurrentVersion` vs `RemoteVersion` (Semver).
     -   Asset download logic (self-update lifting).
 - [ ] **Story-18: Update UI & Notifications**
-    -   Add "Check for Updates" button in Settings.
-    -   Toast/Modal when update is found.
-    -   Progress UI during download.
+    -   [ ] Add "Check for Updates" button in Settings.
+    -   [ ] Toast/Modal when update is found.
+    -   [ ] Progress UI during download.

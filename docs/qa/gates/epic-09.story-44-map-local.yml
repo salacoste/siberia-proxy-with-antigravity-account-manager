@@ -1,0 +1,19 @@
+story: story-44-map-local
+epic: epic-09-advanced-inspection
+status: PASS
+date: 2026-01-05
+author: antigravity
+rationale: |
+  Verified end-to-end functionality using a standalone proxy instance and browser client.
+  - Backend Middleware correctly intercepts requests matching regex.
+  - Local file content is served with correct Content-Type.
+  - Unmatched requests pass through (verified by unit tests).
+  - Frontend UI implemented and compiling (Wails bindings pending runtime).
+verification_evidence:
+  - type: unit_test
+    name: TestMapLocalMiddleware
+    result: PASS
+  - type: manual_browser
+    description: "Navigate to http://localhost:4002/test-map"
+    result: PASS
+    screenshot: map_local_verification.png

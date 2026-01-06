@@ -13,3 +13,7 @@
 *   [x] **Story-30:** Implement Regex & Advanced Filtering Logic
 *   [x] **Story-31:** Implement Request Breakpoint & Rewrite System
 *   [x] **Story-32:** Implement WebSocket Frame Inspector
+*   [x] **Story-44:** Map Local (File Replacement)
+*   [x] **Story-45:** Traffic Scripting (Lua/JS)
+
+

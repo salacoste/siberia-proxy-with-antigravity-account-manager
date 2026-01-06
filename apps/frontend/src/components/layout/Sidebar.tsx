@@ -1,7 +1,9 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Server, Settings, Activity, Cloud } from 'lucide-react';
+import { LayoutDashboard, Users, Server, Settings, Activity, Cloud, FileCode, Code } from 'lucide-react';
 import { clsx } from 'clsx';
+
+
 import { twMerge } from 'tailwind-merge';
 import { Button } from '@/components/ui/button';
 
@@ -14,7 +16,11 @@ const NAV_ITEMS = [
     { name: 'Accounts', path: '/accounts', icon: Users },
     { name: 'Monitor', path: '/monitor', icon: Activity },
     { name: 'Proxy', path: '/proxy', icon: Server },
+    { name: 'Map Local', path: '/map-local', icon: FileCode },
+    { name: 'Scripting', path: '/scripting', icon: Code },
     { name: 'Cloud Sync', path: '/cloud', icon: Cloud },
+
+
     { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
