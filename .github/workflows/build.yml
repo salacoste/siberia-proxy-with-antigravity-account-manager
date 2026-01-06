@@ -40,7 +40,23 @@ jobs:
 
     - name: Install Linux Deps
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev
+        
+        # Robust Workaround: Find where ayatana installed the .pc file and symlink it
+        AYATANA_PC=$(find /usr -name "ayatana-appindicator3-0.1.pc" 2>/dev/null | head -n 1)
+        if [ -z "$AYATANA_PC" ]; then
+          echo "Error: ayatana-appindicator3-0.1.pc not found"
+          exit 1
+        fi
+        echo "Found Ayatana PC at: $AYATANA_PC"
+        PC_DIR=$(dirname "$AYATANA_PC")
+        sudo ln -sf "$AYATANA_PC" "$PC_DIR/appindicator3-0.1.pc"
+        
+        # Verify pkg-config sees it
+        export PKG_CONFIG_PATH="$PC_DIR:$PKG_CONFIG_PATH"
+        pkg-config --print-errors --exists appindicator3-0.1 && echo "Success: pkg-config found appindicator3-0.1"
 
     - name: Build
       working-directory: ./apps/backend
