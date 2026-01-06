@@ -58,3 +58,9 @@ Upstream Client implementation is robust. Dependency injection allows for effect
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-02.story-38-upstream-resilience.yml
 
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent
+- **Steps**: Configured Upstream Proxy in Settings.
+- **Result**: Success Toast "Settings saved" received.
+- **Evidence**: `advanced_settings_validation_1767697033575.webp`
+

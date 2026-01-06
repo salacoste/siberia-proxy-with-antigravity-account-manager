@@ -34,3 +34,9 @@ This reduces friction for developers trying to test the proxy with their scripts
 
 ## Technical Notes
 - Frontend-only story.
+
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent
+- **Steps**: Checked "Connect to Siberia" section in Proxy Page.
+- **Result**: Snippets for Bash, PowerShell, Curl, Node, Python validated.
+- **Evidence**: `switch_account_proxy_validation_1767696947035.webp`

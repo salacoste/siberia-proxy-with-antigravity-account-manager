@@ -43,3 +43,8 @@ Workflow logic significantly improved since initial draft. Asset renaming script
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-05.story-16-github-release.yml
 
+### Manual Verification (2026-01-06)
+- **Method**: Code Audit
+- **Status**: Verified
+- **Notes**: Reviewed `.github/workflows/build.yml`. Confirmed `v*` tag trigger and matrix build strategy.
+

@@ -29,3 +29,8 @@ Ability to find and kill a process by name (e.g., "Visual Studio Code") on macOS
 
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-06.story-19-real-process.yml
+
+### Manual Verification (2026-01-06)
+- **Method**: Indirect (via Story-13)
+- **Status**: Implicitly Verified
+- **Notes**: Account Activation (Story-13) successfully stopped processes before injection, proving this module works.

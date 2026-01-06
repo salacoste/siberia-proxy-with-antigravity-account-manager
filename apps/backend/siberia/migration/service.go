@@ -45,17 +45,23 @@ func (s *Service) CheckLegacyData() (LegacyStatus, error) {
 func (s *Service) PerformImport() (int, error) {
 	path, err := s.getLegacyPath()
 	if err != nil {
+		logger.New("Migration").Error(fmt.Sprintf("Path resolution failed: %v", err))
 		return 0, fmt.Errorf("could not resolve legacy path: %v", err)
 	}
+	logger.New("Migration").Info(fmt.Sprintf("Reading legacy file from: %s", path))
 
 	config, err := s.parseFile(path)
 	if err != nil {
+		logger.New("Migration").Error(fmt.Sprintf("Parse failed: %v", err))
 		return 0, fmt.Errorf("failed to parse legacy config: %v", err)
 	}
+	logger.New("Migration").Info(fmt.Sprintf("Found %d accounts in legacy config", len(config.Accounts)))
 
 	importedCount := 0
 	for _, acc := range config.Accounts {
+		logger.New("Migration").Info(fmt.Sprintf("Processing account: %s", acc.Email))
 		if acc.Email == "" || acc.RefreshToken == "" {
+			logger.New("Migration").Info("Skipping invalid entry (missing email or token)")
 			continue // Skip invalid entries
 		}
 
@@ -72,7 +78,7 @@ func (s *Service) PerformImport() (int, error) {
 			importedCount++
 			logger.New("Migration").Info(fmt.Sprintf("Imported legacy account: %s", acc.Email))
 		} else {
-			logger.New("Migration").Info(fmt.Sprintf("Skipping existing or invalid account %s: %v", acc.Email, err))
+			logger.New("Migration").Error(fmt.Sprintf("Failed to import %s: %v", acc.Email, err))
 		}
 	}
 

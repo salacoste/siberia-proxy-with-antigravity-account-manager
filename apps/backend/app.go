@@ -251,6 +251,13 @@ func (a *App) startup(ctx context.Context) {
 	// Setup Tray
 	a.trayManager.Setup(ctx)
 
+	// Auto-Import Legacy Data
+	if count, err := a.migrationService.PerformImport(); err == nil && count > 0 {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("Imported %d legacy accounts", count))
+	} else if err != nil {
+		runtime.LogErrorf(a.ctx, "Legacy import failed: %v", err)
+	}
+
 	// Listen for Proxy Events to update Tray
 	// Real-world: The ProxyService should emit events, and we listen here.
 	// For MVP, we can assume manual updates or polling.

@@ -11,6 +11,7 @@ export namespace accounts {
 	    proxy_group: string;
 	    is_active: boolean;
 	    stats: string;
+	    tier: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AccountDTO(source);
@@ -26,6 +27,7 @@ export namespace accounts {
 	        this.proxy_group = source["proxy_group"];
 	        this.is_active = source["is_active"];
 	        this.stats = source["stats"];
+	        this.tier = source["tier"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -168,6 +170,73 @@ export namespace config {
 	        this.cloud_email = source["cloud_email"];
 	        this.cloud_last_sync = source["cloud_last_sync"];
 	        this.cloud_sync_key = source["cloud_sync_key"];
+	    }
+	}
+
+}
+
+export namespace main {
+	
+	export class ScriptState {
+	    code: string;
+	    active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ScriptState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.active = source["active"];
+	    }
+	}
+
+}
+
+export namespace middleware {
+	
+	export class MapLocalRule {
+	    id: string;
+	    name: string;
+	    enabled: boolean;
+	    url_regex: string;
+	    local_path: string;
+	    content_type: string;
+	    status: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new MapLocalRule(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.enabled = source["enabled"];
+	        this.url_regex = source["url_regex"];
+	        this.local_path = source["local_path"];
+	        this.content_type = source["content_type"];
+	        this.status = source["status"];
+	    }
+	}
+
+}
+
+export namespace migration {
+	
+	export class LegacyStatus {
+	    found: boolean;
+	    count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LegacyStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.found = source["found"];
+	        this.count = source["count"];
 	    }
 	}
 

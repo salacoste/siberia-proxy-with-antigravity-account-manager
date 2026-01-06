@@ -42,3 +42,8 @@ Implement the ability to add new Google Accounts to the system.
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-03.story-12-add-account.yml
 
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent (Previous Session)
+- **Status**: Verified
+- **Notes**: "Add Account" dialog works, accounts persisted to DB.
+

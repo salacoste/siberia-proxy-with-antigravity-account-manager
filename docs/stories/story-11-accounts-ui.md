@@ -44,3 +44,8 @@ Accounts UI (`AccountsPage.tsx`) correctly implements the ShadCN `Table` compone
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-03.story-11-accounts-ui.yml
 
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent
+- **Status**: Verified
+- **Notes**: Account List renders correctly. Active status displayed.
+

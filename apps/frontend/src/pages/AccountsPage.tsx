@@ -30,6 +30,7 @@ interface Account {
     proxy_group: string;
     is_active: boolean;
     created_at: string;
+    tier: string;
 }
 
 export default function AccountsPage() {
@@ -125,6 +126,7 @@ export default function AccountsPage() {
                             <TableHead className="w-[50px]"></TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Group</TableHead>
+                            <TableHead>Tier</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -146,6 +148,18 @@ export default function AccountsPage() {
                                     </TableCell>
                                     <TableCell className="font-medium">{acc.email}</TableCell>
                                     <TableCell>{acc.proxy_group}</TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant="outline"
+                                            className={
+                                                acc.tier === "Free"
+                                                    ? "bg-slate-100 text-slate-500 border-slate-200"
+                                                    : "bg-amber-100 text-amber-700 border-amber-200 font-bold"
+                                            }
+                                        >
+                                            {acc.tier || "Free"}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant={acc.is_active ? "default" : "secondary"}>
                                             {acc.is_active ? "Active" : "Inactive"}

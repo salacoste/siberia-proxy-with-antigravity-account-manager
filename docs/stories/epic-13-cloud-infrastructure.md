@@ -14,3 +14,9 @@
 
 ## Status
 **Status:** Completed
+
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent
+- **Steps**: Checked "Cloud Sync" section in Settings and `/cloud` page.
+- **Result**: Login UI elements present.
+- **Evidence**: `advanced_settings_validation_1767697033575.webp`

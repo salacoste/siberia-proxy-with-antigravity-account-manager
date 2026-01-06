@@ -97,6 +97,7 @@ type AccountDTO struct {
 	ProxyGroup    string `json:"proxy_group"`
 	IsActive      bool   `json:"is_active"`
 	Stats         string `json:"stats"` // JSON string
+	Tier          string `json:"tier"`  // Extracted from stats
 }
 
 func (s *Service) ListAccounts() ([]AccountDTO, error) {
@@ -107,6 +108,17 @@ func (s *Service) ListAccounts() ([]AccountDTO, error) {
 
 	dtos := make([]AccountDTO, len(accounts))
 	for i, acc := range accounts {
+		// Parse Tier from Stats
+		tier := "Free"
+		if acc.Stats != "" {
+			var statsMap map[string]interface{}
+			if err := json.Unmarshal([]byte(acc.Stats), &statsMap); err == nil {
+				if t, ok := statsMap["tier"].(string); ok {
+					tier = t
+				}
+			}
+		}
+
 		dtos[i] = AccountDTO{
 			ID:            acc.ID,
 			CreatedAt:     acc.CreatedAt,
@@ -116,6 +128,7 @@ func (s *Service) ListAccounts() ([]AccountDTO, error) {
 			ProxyGroup:    acc.ProxyGroup,
 			IsActive:      acc.IsActive,
 			Stats:         acc.Stats,
+			Tier:          tier,
 		}
 	}
 	return dtos, nil

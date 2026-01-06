@@ -48,3 +48,9 @@ Backend orchestration in `service.go` correctly implements the Kill -> Inject ->
 ### Gate Status
 Gate: PASS → docs/qa/gates/epic-03.story-13-switch-account.yml
 
+### Manual Verification (2026-01-06)
+- **Method**: Browser Subagent
+- **Steps**: Used "Activate" button on account list.
+- **Result**: Success Toast received. Visual status confirmed.
+- **Evidence**: `switch_account_proxy_validation_1767696947035.webp`
+

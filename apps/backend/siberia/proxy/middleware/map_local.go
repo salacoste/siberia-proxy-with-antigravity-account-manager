@@ -15,10 +15,12 @@ import (
 // MapLocalRule defines a rule for mapping a URL pattern to a local file
 type MapLocalRule struct {
 	ID          string `json:"id"`
+	Name        string `json:"name"`
 	Enabled     bool   `json:"enabled"`
 	UrlRegex    string `json:"url_regex"`
 	LocalPath   string `json:"local_path"`
 	ContentType string `json:"content_type"` // Optional override
+	Status      int    `json:"status"`       // HTTP Status code (default 200)
 }
 
 // MapLocalMiddleware handles serving local files for matched requests
@@ -136,8 +138,14 @@ func (m *MapLocalMiddleware) HandleRequest(req *http.Request, ctx *goproxy.Proxy
 		}
 	}
 
+	// Determine Status Code
+	statusCode := matchedRule.Status
+	if statusCode == 0 {
+		statusCode = http.StatusOK
+	}
+
 	// Create Response
-	resp := goproxy.NewResponse(req, contentType, http.StatusOK, "")
+	// resp := goproxy.NewResponse(req, contentType, statusCode, "")
 
 	// We need to write the body manually because goproxy.NewResponse takes a string/byte slice
 	// but we want to potentially stream or just read valid bytes.
@@ -146,7 +154,7 @@ func (m *MapLocalMiddleware) HandleRequest(req *http.Request, ctx *goproxy.Proxy
 	content, _ := os.ReadFile(matchedRule.LocalPath)
 
 	// Create a new response with the content
-	resp = goproxy.NewResponse(req, contentType, http.StatusOK, string(content))
+	resp := goproxy.NewResponse(req, contentType, statusCode, string(content))
 
 	// Add a header to indicate mapping happened
 	resp.Header.Set("X-Siberia-Map-Local", matchedRule.ID)
