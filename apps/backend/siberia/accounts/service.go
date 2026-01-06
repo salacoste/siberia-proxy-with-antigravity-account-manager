@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/salacoste/siberia/siberia/ide"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
+	"github.com/salacoste/siberia/siberia/quota"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +19,7 @@ type Service struct {
 	db        *gorm.DB
 	process   *process.Service
 	injector  *injection.Service
+	quota     *quota.Service
 	config    *config.Manager
 	configDir string
 }
@@ -26,6 +29,7 @@ func NewService(database *db.Database, cfg *config.Manager) *Service {
 		db:        database.Conn,
 		process:   process.NewService(),
 		injector:  injection.NewService(),
+		quota:     quota.NewService(),
 		config:    cfg,
 		configDir: cfg.ConfigDir(),
 	}
@@ -181,4 +185,38 @@ func (s *Service) GetRotatingToken() (string, error) {
 	}
 
 	return token, nil
+}
+
+// UpdateQuota forces a refresh of the account's quota and tier status
+func (s *Service) UpdateQuota(id uint) error {
+	var acc db.Account
+	if err := s.db.First(&acc, id).Error; err != nil {
+		return err
+	}
+
+	// Used decrypted session token
+	token := string(acc.SessionToken)
+	if token == "" {
+		token = string(acc.Password) // Fallback for MVP
+	}
+
+	stats, err := s.quota.FetchAccountStats(token, acc.Email)
+	if err != nil {
+		if err.Error() == "403 Forbidden" {
+			// Mark inactive if forbidden
+			acc.IsActive = false
+			s.db.Save(&acc)
+			return fmt.Errorf("account marked inactive: 403 forbidden")
+		}
+		return err
+	}
+
+	// Serialize stats to JSON
+	statsJSON, err := json.Marshal(stats)
+	if err == nil {
+		acc.Stats = string(statsJSON)
+		s.db.Save(&acc)
+	}
+
+	return nil
 }
