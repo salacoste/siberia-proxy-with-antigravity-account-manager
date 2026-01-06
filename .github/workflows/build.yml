@@ -55,20 +55,31 @@ jobs:
         elseif (Test-Path siberia-Windows-latest.exe) { Move-Item siberia-Windows-latest.exe siberia-windows-amd64.exe }
 
     # Rename others for clarity
-    - name: Rename Assets
+    - name: Rename Assets (Unix)
       if: runner.os != 'Windows'
       working-directory: ./apps/backend/build/bin
       run: |
-        mv siberia-${{ runner.os }} siberia-${{ runner.os }}-amd64 || true
-        # macOS might be universal or arm64/amd64 depending on runner. Actions macOS-latest is arm64 (M1) usually now?
-        # Actually macos-latest is currently x86_64 (Intel) -> macos-13, but macos-14 is arm64.
-        # Wails builds universal by default on mac? No, depends on arch.
-        # For MVP, we just upload what we built.
+        # Convert runner.os to lowercase (Linux -> linux, macOS -> darwin)
+        OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]' | sed 's/macos/darwin/')
+        
+        # Identify source file (Wails default output)
+        SRC="siberia-${{ runner.os }}"
+        
+        # Define target name (assuming amd64 for now as wails cross-compile isn't setup in matrix)
+        # Verify if file exists before moving
+        if [ -f "$SRC" ]; then
+          mv "$SRC" "siberia-${OS_NAME}-amd64"
+        fi
 
     - name: Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: |
-          apps/backend/build/bin/*
+          apps/backend/build/bin/siberia-*-amd64
+          apps/backend/build/bin/siberia-*-amd64.exe
+        generate_release_notes: true
+        draft: true
+        prerelease: false
+
 

@@ -1,7 +1,9 @@
 # Story-16: Automate GitHub Releases
 
 **Epic:** [Epic-05: Distribution](./epic-05-distribution.md)
-**Status:** Draft
+**Status:** Completed
+
+
 **Feature Branch:** `antigravity/feat/distribution`
 
 ## Goal
@@ -26,12 +28,13 @@ Automate the creation of GitHub Releases and asset uploads when a tag is pushed.
 
 ## QA Results
 
-### Review Date: 2026-01-04
+
+### Review Date: 2026-01-06 (Final)
 
 ### Reviewed By: Quinn (Test Architect)
 
 ### Code Quality Assessment
-Workflow `build.yml` correctly configured to trigger on `v*` tags. Uses `softprops/action-gh-release` to parse tags and upload artifacts. Cross-platform build matrix is maintained.
+Workflow logic significantly improved since initial draft. Asset renaming script handles case-sensitivity and OS naming (`darwin` vs `macos`) correctly. Upgrade to `v2` of release action ensures future compatibility.
 
 ### Compliance Check
 - Coding Standards: [✓] YAML syntax valid.

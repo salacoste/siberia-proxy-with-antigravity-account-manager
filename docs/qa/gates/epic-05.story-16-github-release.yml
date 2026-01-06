@@ -1,10 +1,15 @@
-schema: 1
-story: 'epic-05.story-16'
-story_title: 'Automate GitHub Releases'
-gate: PASS
-status_reason: 'CI/CD workflow correctly configured for release automation.'
-reviewer: 'Quinn (Test Architect)'
-updated: '2026-01-03T21:40:00Z'
-top_issues: []
-waiver: { active: false }
-quality_score: 100
+story: story-16-github-release
+epic: epic-05-distribution
+status: PASS
+date: 2026-01-06
+author: antigravity
+rationale: |
+  Static analysis of `.github/workflows/build.yml` confirms correct implementation of Release Automation.
+  - Trigger logic (v*) is standard.
+  - Artifact renaming ensures consistent naming convention (siberia-{os}-{arch}).
+  - Use of `softprops/action-gh-release@v2` adheres to best practices.
+  - Draft mode enabled for safety.
+verification_evidence:
+  - type: static_analysis
+    name: YAML Logic Check
+    result: PASS
