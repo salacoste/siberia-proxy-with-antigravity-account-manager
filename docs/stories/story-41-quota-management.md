@@ -1,8 +1,9 @@
 # Story-41: Quota Management & Paid Tier Detection
 
 **Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Ready
+**Status:** Ready for Dev
 **Reference:** `docs/ag-ref-docs/feature-misc-backend.md`
+**Technical Approach:** `docs/architecture/modules/quota-service.md`
 
 ## Goal
 Implement the logic to fetch quota usage from Google's internal APIs and correct detection of "Paid Tier" status (Free vs Pro vs Ultra), essential for the "Smart Pooling" logic.
