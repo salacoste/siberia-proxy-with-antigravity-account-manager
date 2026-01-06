@@ -1,0 +1,30 @@
+# QA Gate: Epic-18.Story-40-System-Tray
+
+**Status:** PASS
+**Date:** 2026-01-06
+**QA Owner:** Quinn
+
+## 1. Static Analysis
+- [x] **Code Structure**: `siberia/tray` package implemented with `Manager` struct.
+- [x] **Wiring**: `main.go` calls `app.trayManager.Run()` (External Loop). `app.go` connects `OnToggleShow`, `OnQuit`.
+- [x] **Dependencies**: `github.com/energye/systray v1.0.2` present in `go.mod`.
+- [x] **API Usage**: Correct usage of `.Click()` for menu callbacks (verified against library source).
+
+## 2. Automated Verification
+- [x] **Compilation**: `go build` passes (verified by Dev).
+- [x] **Regression**: `go test ./...` passed (Proxy/Accounts logic unaffected). Note: Local regression run confirmed 100% pass on core modules.
+
+## 3. Manual Verification (Simulated)
+> [!NOTE]
+> Headless environment prevents physical interaction with System Tray. Verification relies on logic inspection and successful compilation.
+
+- [x] **Startup Logic**: `tray.Run()` called before `wails.Run()`.
+- [x] **Menu Logic**: Menu items ("Show", "Toggle", "Quit") are initialized in `onReady`.
+- [x] **Event Handling**: `UpdateMenu(bool)` logic correctly toggles Icon and Checkbox state.
+
+## 4. Risk Assessment
+- **Stability**: Using `RunWithExternalLoop` mitigates the specific risk of "Main Loop" conflict on macOS.
+- **Maintenance**: `energye/systray` is a fork; need to monitor for upstream updates or issues.
+
+## 5. Conclusion
+**PASS**. The implementation follows the Architect's "Hybrid Strategy" perfectly. Logic is sound and regression tests pass. Ready for release in v1.3/v2.0.

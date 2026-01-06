@@ -1,0 +1,22 @@
+context:
+  story: Story-38 (Terminal Helper CLI Update)
+  epic: Epic-12
+  date: 2026-01-06
+  agent: Quinn
+
+review:
+  static_analysis:
+    - file: apps/backend/main.go
+      status: PASS
+      notes: "CLI args parsing implemented cleanly. Port resolution respects config config."
+  
+  functional_verification:
+    - case: "siberia set-env"
+      status: PASS
+      output: "export HTTP_PROXY=... (Validated via manual run)"
+    - case: "siberia help"
+      status: PASS
+
+decision:
+  status: PASS
+  type: RELEASE_CANDIDATE

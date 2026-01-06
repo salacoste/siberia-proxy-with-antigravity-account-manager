@@ -10,16 +10,20 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 
-import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
-import { CheckForUpdates, GetVersion, CheckCertTrust, InstallCert } from '../../wailsjs/go/main/App';
+import { GetVersion, CheckCertTrust, InstallCert } from '../../wailsjs/go/main/App';
+
+import { useUpdateStore } from '@/stores/useUpdateStore';
+import { UpdateDialog } from '@/components/settings/UpdateDialog';
 
 export default function SettingsPage() {
     const { config, updateConfig } = useConfigStore();
+    const updateStore = useUpdateStore();
+
     const [upstream, setUpstream] = useState('');
     const [version, setVersion] = useState('Loading...');
-    const [checkingUpdate, setCheckingUpdate] = useState(false);
     const [trustStatus, setTrustStatus] = useState(false);
     const [installingCert, setInstallingCert] = useState(false);
+    const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 
     useEffect(() => {
         if (config) {
@@ -75,39 +79,19 @@ export default function SettingsPage() {
             toast.info("Update check unavailable in Web Mode");
             return;
         }
-        setCheckingUpdate(true);
-        try {
-            const info = await CheckForUpdates();
-            if (info.available) {
-                toast.promise(
-                    new Promise((resolve) => {
-                        resolve(true);
-                    }),
-                    {
-                        loading: 'Update found!',
-                        success: (
-                            <div className="flex flex-col gap-2">
-                                <span className="font-bold">Update {info.latest_version} available!</span>
-                                <Button size="sm" onClick={() => BrowserOpenURL(info.download_url)}>
-                                    Download Update
-                                </Button>
-                            </div>
-                        ),
-                        error: 'Error'
-                    }
-                );
-            } else {
-                if (info.error) {
-                    toast.error(`Error checking updates: ${info.error} `);
-                } else {
-                    toast.success(`You are on the latest version(${info.current_version})`);
-                }
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to check for updates");
-        } finally {
-            setCheckingUpdate(false);
+
+        await updateStore.checkForUpdates();
+        const { updateInfo, error } = useUpdateStore.getState();
+
+        if (error) {
+            toast.error(`Error checking updates: ${error}`);
+            return;
+        }
+
+        if (updateInfo?.available) {
+            setShowUpdateDialog(true);
+        } else {
+            toast.success(`You are on the latest version (${updateInfo?.current_version || version})`);
         }
     };
 
@@ -329,11 +313,13 @@ export default function SettingsPage() {
                         <span className="text-muted-foreground mr-2">Current Version:</span>
                         <span className="font-mono font-bold">{version}</span>
                     </div>
-                    <Button onClick={handleCheckUpdates} disabled={checkingUpdate} variant="outline">
-                        {checkingUpdate ? "Checking..." : "Check for Updates"}
+                    <Button onClick={handleCheckUpdates} disabled={updateStore.checking} variant="outline">
+                        {updateStore.checking ? "Checking..." : "Check for Updates"}
                     </Button>
                 </CardContent>
             </Card>
+
+            <UpdateDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog} />
         </div>
     );
 }

@@ -1,7 +1,7 @@
 # Story-38: Implement Terminal Shell Helper
 
 **Epic:** [Epic-12: Native Integrations beyond VS Code](./epic-12-native-integrations.md)
-**Status:** Completed
+**Status:** Released
 
 ## Goal
 Allow users to easily configure their current terminal session to use the proxy.
@@ -26,3 +26,8 @@ Allow users to easily configure their current terminal session to use the proxy.
 - **UI**: Added Terminal Configuration card with tabs for different shells.
 - **Functionality**: Copy button uses `navigator.clipboard` correctly.
 - **Correctness**: Generated commands match standard proxy environment variable syntax.
+
+### QA Results (2026-01-06) - CLI Update
+**Agent**: Quinn
+**Decision**: **PASS**
+**Notes**: Verified `siberia set-env` and `siberia help` commands. Logic is sound and handles config loading.

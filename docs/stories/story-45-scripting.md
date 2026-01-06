@@ -1,7 +1,7 @@
 # Story-45: Traffic Scripting (Lua/JS)
 
 **Epic:** [Epic-09: Advanced Traffic Inspection](./epic-09-advanced-inspection.md)
-**Status:** Ready for Review
+**Status:** Completed
 
 ## Goal
 Allow users to write scripts to modify requests and responses programmatically on the fly.

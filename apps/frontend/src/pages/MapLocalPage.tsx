@@ -7,8 +7,32 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, FileText } from 'lucide-react';
 
-import { middleware } from '../../wailsjs/go/models';
+// import { middleware } from '../../wailsjs/go/models';
 import { AddMapLocalRule, DeleteMapLocalRule, GetMapLocalRules } from '../../wailsjs/go/main/App';
+
+// Temporary fix for build: module resolution failing for middleware namespace
+export namespace middleware {
+    export class MapLocalRule {
+        id: string;
+        name: string;
+        url_regex: string;
+        local_path: string;
+        content_type: string;
+        status: number;
+        enabled: boolean;
+
+        constructor(source: any = {}) {
+            if ('string' === typeof source) source = JSON.parse(source);
+            this.id = source["id"] || "";
+            this.name = source["name"] || "";
+            this.url_regex = source["url_regex"] || "";
+            this.local_path = source["local_path"] || "";
+            this.content_type = source["content_type"] || "";
+            this.status = source["status"] || 0;
+            this.enabled = source["enabled"] || false;
+        }
+    }
+}
 
 export default function MapLocalPage() {
     const [rules, setRules] = useState<middleware.MapLocalRule[]>([]);

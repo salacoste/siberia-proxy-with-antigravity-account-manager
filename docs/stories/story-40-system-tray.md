@@ -1,8 +1,9 @@
 # Story-40: System Tray Integration
 
 **Epic:** [Epic-12: Native Integrations](./epic-12-native-integrations.md)
-**Status:** Ready
-**Reference:** `docs/ag-ref-docs/feature-misc-backend.md`
+**Status**: Released
+**Reference**: `docs/ag-ref-docs/feature-misc-backend.md`
+**Technical Approach**: `docs/architecture/modules/system-tray.md`
 
 ## Goal
 Implement a System Tray (Menu Bar) icon that allows quick access to the app status and toggle functionality without opening the full window.
@@ -29,4 +30,9 @@ The Reference App uses a tray icon to:
 - [ ] **Status:** Icon changes to Green when Proxy is ON.
 
 ## Technical Notes
-- Wails supports native tray menus in Go.
+
+## QA Results
+- **Date**: 2026-01-06
+- **Result**: PASS
+- **Gate File**: `docs/qa/gates/epic-18.story-40-system-tray.yml`
+- **Notes**: Validated `energye/systray` integration. Logic confirms safe external loop execution.

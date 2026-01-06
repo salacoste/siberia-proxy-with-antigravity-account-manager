@@ -1,6 +1,6 @@
 # Epic-17: Launch Readiness
 
-**Status**: Completed
+**Status**: Released
 **Parent**: Project "Siberia"
 
 ## Executive Summary

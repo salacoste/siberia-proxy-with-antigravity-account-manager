@@ -8,6 +8,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/dop251/goja v0.0.0-20251201205617-2bb4c724c0f9
 	github.com/elazarl/goproxy v1.7.2
+	github.com/energye/systray v1.0.2
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
@@ -55,6 +56,7 @@ require (
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/samber/lo v1.49.1 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/tevino/abool v0.0.0-20220530134649-2bfc934cb23c // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/salacoste/siberia/siberia/accounts"
@@ -18,6 +19,7 @@ import (
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/share"
+	"github.com/salacoste/siberia/siberia/tray"
 	"github.com/salacoste/siberia/siberia/types"
 	"github.com/salacoste/siberia/siberia/updater"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -44,6 +46,7 @@ type App struct {
 	cloudService     *cloud.Service
 	AnalyticsService *analytics.AnalyticsService
 	updateService    *updater.UpdateService
+	trayManager      *tray.Manager
 }
 
 // Version is the current application version
@@ -54,7 +57,7 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize DB
 	database, err := db.Init(cfg.ConfigDir(), cfg.Config.MasterKey)
 	if err != nil {
-		fmt.Printf("Fatal: Failed to init DB: %v\n", err)
+		log.Printf("Fatal: Failed to init DB: %v\n", err)
 	}
 
 	// Initialize Logger
@@ -63,7 +66,7 @@ func NewApp(cfg *config.Manager) *App {
 	// Initialize CA Service
 	caSvc := ca.NewService(&cfg.Config)
 	if err := caSvc.EnsureCA(); err != nil {
-		fmt.Printf("Fatal: Failed to ensure CA: %v\n", err)
+		log.Printf("Fatal: Failed to ensure CA: %v\n", err)
 	}
 
 	// Initialize Analytics
@@ -90,12 +93,12 @@ func NewApp(cfg *config.Manager) *App {
 
 	var shareProvider share.StorageProvider
 	// Try connecting to MinIO
-	fmt.Printf("Initializing Share Service with MinIO at %s...\n", minioEndpoint)
+	log.Printf("Initializing Share Service with MinIO at %s...\n", minioEndpoint)
 	s3Provider, err := share.NewS3Provider(minioEndpoint, minioAccess, minioSecret, minioBucket, false)
 	if err == nil {
 		shareProvider = s3Provider
 	} else {
-		fmt.Printf("Warning: Failed to init MinIO: %v. Falling back to Mock Share Provider.\n", err)
+		log.Printf("Warning: Failed to init MinIO: %v. Falling back to Mock Share Provider.\n", err)
 		shareProvider = &share.MockProvider{}
 	}
 
@@ -113,6 +116,9 @@ func NewApp(cfg *config.Manager) *App {
 	// TODO: Get repo from config or hardcode for now
 	updateSvc := updater.NewUpdateService(Version, "salacoste/siberia-proxy-with-antigravity-account-manager")
 
+	// Initialize Tray Manager
+	trayMgr := tray.NewManager()
+
 	return &App{
 		config:           cfg,
 		proxyService:     proxy.NewService(&cfg.Config, caSvc, analyticsEngine, accountSvc),
@@ -125,6 +131,7 @@ func NewApp(cfg *config.Manager) *App {
 		shareService:     shareSvc,
 		cloudService:     cloudSvc,
 		AnalyticsService: analyticsSvc,
+		trayManager:      trayMgr,
 	}
 }
 
@@ -183,12 +190,32 @@ func (a *App) ActivateAccount(id uint) error {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
+	fmt.Println("Siberia Backend Started (v" + Version + ")")
+
+	// Ensure CA
+	if err := a.caService.EnsureCA(); err != nil { // Corrected to use a.caService
+		log.Printf("Warning: Failed to ensure CA: %v", err)
+	}
+
+	// Initialize DB (already done in NewApp, but if there's a re-init logic, it would go here)
+	// For now, assuming DB is ready from NewApp.
+
+	// Initialize MinIO (already done in NewApp, but if there's a re-init logic, it would go here)
+	// For now, assuming S3 is ready from NewApp.
+
+	// Setup Tray
+	a.trayManager.Setup(ctx)
+
+	// Listen for Proxy Events to update Tray
+	// Real-world: The ProxyService should emit events, and we listen here.
+	// For MVP, we can assume manual updates or polling.
+
 	// Start Proxy Service
 	if err := a.proxyService.Start(ctx); err != nil {
 		runtime.LogErrorf(a.ctx, "Failed to start proxy: %v", err)
 	}
 
-	runtime.LogInfo(a.ctx, fmt.Sprintf("Proxy started on port %d", a.config.Config.ProxyPort))
+	runtime.LogInfo(a.ctx, fmt.Sprintf("Proxy started on port %d", a.config.Get().ProxyPort)) // Corrected to use a.config.Get().ProxyPort
 }
 
 // shutdown is called at application termination

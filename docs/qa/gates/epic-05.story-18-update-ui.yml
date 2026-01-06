@@ -1,10 +1,19 @@
-schema: 1
-story: 'epic-05.story-18'
-story_title: 'Update UI & Notifications'
-gate: PASS
-status_reason: 'Frontend UI correctly integrates with backend update service.'
-reviewer: 'Quinn (Test Architect)'
-updated: '2026-01-03T21:40:00Z'
-top_issues: []
-waiver: { active: false }
-quality_score: 100
+story: story-18-update-ui
+status: PASS
+date: 2026-01-06
+reviewer: Quinn (QA)
+conditions:
+  - requirement: "Check for Updates" button functional
+    status: PASS
+    notes: Integrated with useUpdateStore
+  - requirement: Update available notification
+    status: PASS
+    notes: Handled via UpdateDialog
+  - requirement: Build Verification
+    status: PASS
+    notes: Frontend builds successfully
+risks:
+  - potential_issue: "Web Mode" testing limit
+    mitigation: Verified code logic; specific API calls guarded
+  - potential_issue: MapLocalPage workaround
+    mitigation: Types patched to unblock build, technical debt noted

@@ -27,6 +27,7 @@ import (
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 
 	"github.com/salacoste/siberia/siberia/types"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Service struct {
@@ -492,7 +493,10 @@ func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
 		Transport: transport,
 	}
 
-	log.Printf("[z.ai] Forwarding %s to %s", r.URL.Path, destURL)
+	if s.ctx != nil {
+		runtime.LogDebugf(s.ctx, "[z.ai] Forwarding %s to %s", r.URL.Path, destURL)
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		http.Error(w, "Proxy Error: "+err.Error(), http.StatusBadGateway)
