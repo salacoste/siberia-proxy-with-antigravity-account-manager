@@ -14,6 +14,7 @@ import (
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/ratelimit"
+	"github.com/salacoste/siberia/siberia/zai"
 )
 
 const (
@@ -240,4 +241,45 @@ func (c *GeminiClient) StreamGenerateContent(ctx context.Context, model string, 
 	}()
 
 	return ch, errCh
+}
+
+// GenerateImage sends an image generation request
+func (c *GeminiClient) GenerateImage(ctx context.Context, req *mappers.ImageRequest) (*mappers.ImageResponse, string, error) {
+	// We use the same account pool rotation logic
+	for attempt := 0; attempt < MaxRetries; attempt++ {
+		// 1. Get Token (and Identity)
+		token, identity, err := c.accounts.GetRotatingToken()
+		if err != nil {
+			return nil, "", fmt.Errorf("auth error: %v", err)
+		}
+
+		// 2. Initialize Z.ai Vision Client (which has the ImageGen method)
+		// We treat the "token" as the API Key for Z.ai/Gemini
+		// The endpoint is c.endpoint (primary or fallback)
+		// Need to import "github.com/salacoste/siberia/siberia/zai"
+		client := zai.NewVisionClient(c.endpoint, token)
+
+		// 3. Execute
+		resp, err := client.GenerateImage(req)
+		if err != nil {
+			// Retry Logic
+			if strings.Contains(err.Error(), "429") || strings.Contains(err.Error(), "403") {
+				fmt.Printf("Upstream Image Gen Error (Retryable): %v. Retrying with new account...\n", err)
+				continue
+			}
+			if strings.Contains(err.Error(), "50") { // 500, 502, etc
+				if c.endpoint == c.primaryURL {
+					c.endpoint = c.fallbackURL
+					fmt.Printf("Upstream 5xx: Switching to Fallback Endpoint\n")
+				}
+				time.Sleep(time.Duration(1<<attempt) * time.Second)
+				continue
+			}
+			return nil, "", err
+		}
+
+		return resp, identity, nil
+	}
+
+	return nil, "", fmt.Errorf("max retries exceeded for image generation")
 }

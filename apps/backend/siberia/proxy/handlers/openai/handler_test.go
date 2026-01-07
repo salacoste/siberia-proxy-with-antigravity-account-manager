@@ -39,6 +39,10 @@ func (m *MockClient) StreamGenerateContent(ctx context.Context, model string, re
 	return ch, errCh
 }
 
+func (m *MockClient) GenerateImage(ctx context.Context, req *mappers.ImageRequest) (*mappers.ImageResponse, string, error) {
+	return nil, "test-identity", nil
+}
+
 func TestHandler_Unary(t *testing.T) {
 	mockC := &MockClient{
 		Resp: &mappers.GeminiResponse{

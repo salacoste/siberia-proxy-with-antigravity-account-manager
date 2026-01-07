@@ -14,4 +14,7 @@ type Client interface {
 	// StreamGenerateContent sends a streaming request
 	// It returns a channel of chunks or error
 	StreamGenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (<-chan *mappers.GeminiResponse, <-chan error)
+
+	// GenerateImage sends an image generation request
+	GenerateImage(ctx context.Context, req *mappers.ImageRequest) (*mappers.ImageResponse, string, error)
 }

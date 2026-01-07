@@ -42,7 +42,7 @@ type Service struct {
 	TelemetryManager  *TelemetryManager
 	mu                sync.RWMutex
 	SkipWailsEvents   bool // For testing
-	openaiHandler     http.Handler
+	openaiHandler     *openai.Handler
 
 	claudeHandler http.Handler
 	geminiHandler http.Handler
@@ -444,12 +444,13 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 2. Handler Specific Routes (Story-43)
 	// OpenAI Chat Completions
 	if r.URL.Path == "/v1/chat/completions" && r.Method == "POST" {
-		// Log internal handling
-		// log.Printf("[Proxy] Handling OpenAI Request: %s", r.URL.Path)
-		// We still want to emit events? The handlers don't emit events automatically to our TelemetryManager.
-		// Detailed telemetry integration for internal handlers is a nice-to-have.
-		// For now, let's just serve.
 		s.openaiHandler.ServeHTTP(w, r)
+		return
+	}
+
+	// OpenAI Image Generations (Story-63)
+	if r.URL.Path == "/v1/images/generations" && r.Method == "POST" {
+		s.openaiHandler.ImageGenerations(w, r)
 		return
 	}
 
