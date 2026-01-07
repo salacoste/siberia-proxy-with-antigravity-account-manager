@@ -169,6 +169,22 @@ func (a *App) PerformLegacyImport() (int, error) {
 	return a.migrationService.PerformImport()
 }
 
+// ScanIDEAccounts scans for accounts in JetBrains/Android Studio
+func (a *App) ScanIDEAccounts() ([]migration.DiscoveredAccount, error) {
+	if a.migrationService == nil {
+		return nil, fmt.Errorf("migration service not initialized")
+	}
+	return a.migrationService.ScanForIDEAccounts()
+}
+
+// ImportDiscoveredAccount imports an account found by scanner
+func (a *App) ImportDiscoveredAccount(rawToken string) error {
+	if a.migrationService == nil {
+		return fmt.Errorf("migration service not initialized")
+	}
+	return a.migrationService.ImportAccount(rawToken)
+}
+
 // OpenProjectInIDE opens the current working directory in the configured IDE
 func (a *App) OpenProjectInIDE() error {
 	// 1. Get Configured IDE

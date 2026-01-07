@@ -1,6 +1,6 @@
 # Epic-21: Zero-Config Onboarding (Deep Integration)
 
-**Status**: Planning
+**Status**: Completed
 **Priority**: Medium (Tier 3 - UX)
 **Basis**: `docs/gap_analysis_deep_dive.md` (Section 8)
 

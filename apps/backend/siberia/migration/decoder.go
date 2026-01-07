@@ -59,15 +59,6 @@ func findFieldBytes(data []byte, targetFieldNum int32) ([]byte, error) {
 	return nil, fmt.Errorf("field %d not found", targetFieldNum)
 }
 
-// Minimal helper to write field for testing
-func encodeField(num int32, value []byte) []byte {
-	return protowire.AppendTag(
-		protowire.AppendBytes(nil, value),
-		protowire.Number(num),
-		protowire.BytesType,
-	)
-}
-
 // Helper to manually construct simple proto msg (Length prefixed)
 func manualEncode(num int, content []byte) []byte {
 	// This is tricky without the library helpers fully exposing write.

@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -122,4 +124,87 @@ func (s *Service) parseFile(path string) (*LegacyConfig, error) {
 		return nil, err
 	}
 	return &config, nil
+}
+
+// === Story-62: IDE Scanning Logic ===
+
+// ScanForIDEAccounts scans the system for supported IDEs and tries to extract tokens
+func (s *Service) ScanForIDEAccounts() ([]DiscoveredAccount, error) {
+	profiles, err := ScanIDEProfiles()
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan profiles: %w", err)
+	}
+
+	var results []DiscoveredAccount
+
+	for _, p := range profiles {
+		// Try to read token
+		blob, err := ReadStateToken(p.DBPath)
+		if err != nil {
+			// Just log and skip, maybe they haven't logged in
+			logger.New("Migration").Info(fmt.Sprintf("WARN: Could not read DB for %s: %v", p.Name, err))
+			continue
+		}
+
+		token, err := ExtractRefreshToken(blob)
+		if err != nil {
+			logger.New("Migration").Info(fmt.Sprintf("WARN: Could not extract token for %s: %v", p.Name, err))
+			continue
+		}
+
+		if token == "" {
+			continue
+		}
+
+		// Mask Token
+		masked := ""
+		if len(token) > 8 {
+			masked = token[:4] + "..." + token[len(token)-4:]
+		} else {
+			masked = "***"
+		}
+
+		results = append(results, DiscoveredAccount{
+			Name:        p.Name,
+			Path:        p.ConfigPath,
+			RawToken:    token,
+			MaskedToken: masked,
+			Source:      "IDE", // could refine based on p.Name
+		})
+	}
+
+	return results, nil
+}
+
+// ImportAccount imports a single account by raw token
+func (s *Service) ImportAccount(rawToken string) error {
+	// Generate a name
+	// In functional requirements, we don't have email.
+	// We'll use a placeholder. user can rename later.
+	// Or maybe we can fetch it? for now, minimal.
+	// Use current time to make unique if needed, or just "Imported Account"
+	// CreateAccount does NOT enforce unique email on DB level? standard gorm struct usually does if tagged.
+	// Check account entity...
+	// But assuming we can handle duplicates or let's generate a unique one.
+
+	// Better: "Imported Account"
+	// Actually, `CreateAccount` takes email.
+	// If we use same email "Imported Account", duplicate key error?
+	// Let's append random suffix or check if we can get email.
+	// Since we can't reliably get email without querying an API (and we might be offline or blocked),
+	// we use a placeholder. TODO: User can rename.
+
+	importName := fmt.Sprintf("Imported Account %s", GenerateRandomSuffix(4))
+
+	// Use token as password (since we use password field for tokens in this MVP/proxy logic)
+	// CreateAccount(email, password, recovery, proxyGroup)
+	return s.accounts.CreateAccount(importName, rawToken, "", "imported")
+}
+
+func GenerateRandomSuffix(n int) string {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "X"
+	}
+	return hex.EncodeToString(bytes)
 }

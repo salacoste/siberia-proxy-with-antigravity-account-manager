@@ -1,0 +1,26 @@
+story: story-62-migration-wizard
+status: PASS
+date: 2026-01-07
+reviewer: Quinn (QA)
+test_results:
+  unit_tests:
+    - name: TestBackendCompilation
+      result: PASS
+      notes: Backend compiles successfully after fixes (types, logger).
+    - name: LegacyTests
+      result: PASS
+      notes: Existing regression tests passed.
+  manual_checks:
+    - check: Scan Logic
+      result: PASS
+      notes: ScanForIDEAccounts correctly integrates ReadStateToken (now []byte) and ExtractRefreshToken.
+    - check: Frontend Logic
+      result: PASS
+      notes: MigrationWizard handles scan/import flow. Removed unused state.
+risk_assessment:
+  level: MEDIUM
+  notes: UI logic depends on Wails bridge. Integration test suggested on real device.
+completion_criteria:
+  - [x] Backend exposes scanning endpoint.
+  - [x] UI lists discovered JetBrains/Android Studio accounts.
+  - [x] "Import" button adds them to the local `siberia.db` as valid accounts.

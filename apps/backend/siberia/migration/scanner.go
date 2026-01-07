@@ -36,19 +36,20 @@ func ScanIDEProfiles() ([]IDEProfile, error) {
 
 	var searchPaths []string
 
-	if runtime.GOOS == "darwin" {
+	switch runtime.GOOS {
+	case "darwin":
 		appSupport := filepath.Join(homeDir, "Library", "Application Support")
 		searchPaths = append(searchPaths,
 			filepath.Join(appSupport, "Google"),
 			filepath.Join(appSupport, "JetBrains"),
 		)
-	} else if runtime.GOOS == "linux" {
+	case "linux":
 		configDir := filepath.Join(homeDir, ".config")
 		searchPaths = append(searchPaths,
 			filepath.Join(configDir, "Google"),
 			filepath.Join(configDir, "JetBrains"),
 		)
-	} else {
+	default:
 		// Windows is distinct, add later if needed.
 		return nil, nil // Not fully supported yet for MVP scanning
 	}

@@ -14,15 +14,33 @@ import { useConfigStore } from './stores/useConfigStore';
 import { useTheme } from './stores/useTheme';
 
 import { TrafficProvider } from './contexts/TrafficContext';
-import { SaveWindowSize } from '../wailsjs/go/main/App';
+import { SaveWindowSize, ListAccounts } from '../wailsjs/go/main/App';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { MigrationWizard } from './components/migration/MigrationWizard';
 
 function App() {
     // Initialize config and theme
     useTheme();
+    const [showWizard, setShowWizard] = React.useState(false);
+
     React.useEffect(() => {
         useConfigStore.getState().fetchConfig();
+
+        // Check for accounts to trigger Wizard
+        const checkAccounts = async () => {
+            // @ts-ignore
+            if (!window.go) return;
+            try {
+                const accounts = await ListAccounts();
+                if (accounts && accounts.length === 0) {
+                    setShowWizard(true);
+                }
+            } catch (e) {
+                console.error("Failed to list accounts", e);
+            }
+        };
+        checkAccounts();
 
         // Window Persistence
         let timeout: NodeJS.Timeout;
@@ -69,6 +87,7 @@ function App() {
                         </Route>
                     </Routes>
                 </BrowserRouter>
+                <MigrationWizard open={showWizard} onOpenChange={setShowWizard} />
             </TrafficProvider>
         </ErrorBoundary>
     );
