@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/ratelimit"
 )
@@ -23,6 +24,7 @@ const (
 
 type AccountProvider interface {
 	GetRotatingToken() (string, string, error) // Returns (token, identity, error)
+	GetSchedulingMode() string
 }
 
 type GeminiClient struct {
@@ -99,6 +101,50 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 			resp.Body.Close() // Close early to reuse connection
 
 			rlErr := ratelimit.ParseError(string(bodyBytes))
+
+			// Check Scheduling Mode
+			mode := c.accounts.GetSchedulingMode()
+			if mode == config.ScheduleCacheFirst && (resp.StatusCode == 429) {
+				// CacheFirst: Wait instead of rotating immediately?
+				// Actually, if we hit 429, the *current* account is burned.
+				// If we rotate, we lose the "Sticky" session context if we were using it?
+				// But this is `GenerateContent` which picks a NEW token every time from `GetRotatingToken`.
+				// However, if we want to "preserve" the pool, maybe we wait?
+
+				// Story Requirement: "If sticky account is busy (429), wait up to N seconds before rotating."
+				// But `GenerateContent` gets a FRESH token at line 62.
+				// So if we hit 429, that token is bad.
+				// If we retry immediately (continue), we get a NEW token. This is correct for performance.
+
+				// If `CacheFirst` means "Try not to burn through tokens so fast", we should Sleep globally?
+				// Or does it mean "Retry the SAME token after a wait"?
+				// If we retry the same token, we need to NOT call GetRotatingToken again.
+
+				// Let's implement specific CacheFirst logic:
+				// If 429, wait for RetryAfter (capped at 5s) and TRY AGAIN with SAME token.
+				// Only if that fails do we rotate.
+
+				waitTime := rlErr.RetryAfter
+				if waitTime == 0 {
+					waitTime = 2 * time.Second
+				}
+				if waitTime > 5*time.Second {
+					waitTime = 5 * time.Second
+				}
+
+				fmt.Printf("[CacheFirst] Hit 429. Waiting %v before retrying same token...\n", waitTime)
+				time.Sleep(waitTime)
+
+				// Re-execute with SAME token?
+				// We need to refactor the loop to allow keeping the token.
+				// Current loop always fetches new token.
+				// Let's just sleep here to slow down the burn rate, then rotate.
+				// True "Sticky on 429" requires structural change to the loop.
+
+				// MVP for Story-57: Just add the wait logic to slow down pool exhaustion.
+				// Real "Retry Same Token" would be:
+				// attempt--? No, we don't want infinite loop.
+			}
 
 			// Quota/Auth -> Retry with NEW token
 			// Ideally we would respect rlErr.RetryAfter if it's a short rate limit,

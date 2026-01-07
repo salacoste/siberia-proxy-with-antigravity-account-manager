@@ -71,4 +71,11 @@ type Account struct {
 	ProxyGroup    string          `gorm:"default:default" json:"proxy_group"`
 	IsActive      bool            `gorm:"default:true" json:"is_active"`
 	Stats         string          `json:"stats"` // JSON string
+	Tier          string          `gorm:"default:'FREE'" json:"tier"`
 }
+
+const (
+	TierFree  = "FREE"
+	TierPro   = "PRO"
+	TierUltra = "ULTRA"
+)

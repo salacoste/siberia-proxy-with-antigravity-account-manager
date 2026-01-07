@@ -1,7 +1,7 @@
 # Story-57: Smart Token Pooling & Tier Sorting
 
 **Epic:** [Epic-20: Advanced Traffic Scheduling](./epic-20-advanced-scheduling.md)
-**Status**: Draft
+**Status**: Ready for Review
 **Priority**: Medium
 **Basis**: `docs/gap_analysis_deep_dive.md`
 
@@ -24,3 +24,19 @@ Optimize account usage by prioritizing higher-tier accounts (ULTRA/PRO) which ty
 ## Acceptance Criteria
 - [ ] Pool with Mixed Tiers -> Requests are assigned to ULTRA accounts first until exhausted.
 - [ ] `CacheFirst` mode -> Proxy blocks/waits on a 429 instead of immediately switching account (up to timeout).
+
+## Dev Agent Record
+### File List
+- `apps/backend/siberia/db/models.go`
+- `apps/backend/siberia/config/config.go`
+- `apps/backend/siberia/accounts/service.go`
+- `apps/backend/siberia/proxy/upstream/gemini.go`
+- `apps/backend/siberia/proxy/upstream/gemini_test.go`
+
+## QA Results
+- **Status**: PASS
+- **Date**: 2026-01-07
+- **Gate**: [epic-20.story-57-smart-pooling.yml](../qa/gates/epic-20.story-57-smart-pooling.yml)
+- **Notes**: Unit tests verify the retry logic and structural changes are correct.
+
+

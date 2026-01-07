@@ -44,12 +44,20 @@ type AppConfig struct {
 
 	// MCP Server
 	ZaiMcpConfig ZaiMcpConfig `json:"zai_mcp_config"`
+
+	// Scheduling
+	SchedulingMode string `json:"scheduling_mode"` // "PerformanceFirst" or "CacheFirst"
 }
 
 type ZaiMcpConfig struct {
 	Enabled bool `json:"enabled"`
 	Port    int  `json:"port"` // Optional, if 0 uses embedded or default
 }
+
+const (
+	SchedulePerformanceFirst = "PerformanceFirst"
+	ScheduleCacheFirst       = "CacheFirst"
+)
 
 type Manager struct {
 	configPath string
@@ -99,6 +107,7 @@ func NewManager() (*Manager, error) {
 				Enabled: false,
 				Port:    6200,
 			},
+			SchedulingMode: SchedulePerformanceFirst,
 		},
 	}
 

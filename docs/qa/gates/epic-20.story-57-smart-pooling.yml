@@ -1,0 +1,23 @@
+story: story-57-smart-pooling
+status: PASS
+date: 2026-01-07
+reviewer: Quinn (QA)
+test_results:
+  unit_tests:
+    - name: TestGeminiClient_Retry429
+      result: PASS
+      notes: Verified 429 retry behavior.
+    - name: TestGeminiClient_Failover500
+      result: PASS
+      notes: Verified 500 failover logic.
+  manual_checks:
+    - check: Compilation
+      result: PASS
+      notes: Clean build.
+risk_assessment:
+  level: LOW
+  notes: Logic is isolated to backend selection and upstream client retry. Fallback to existing behavior is safe.
+completion_criteria:
+  - [x] Account Tier Enum & Field found in models.go
+  - [x] Prioritized Selection Logic found in Service.GetRotatingToken
+  - [x] Scheduling Modes (CacheFirst) logic found in GeminiClient

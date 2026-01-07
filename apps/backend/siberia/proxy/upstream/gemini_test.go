@@ -20,6 +20,10 @@ func (m *MockAccountProvider) GetRotatingToken() (string, string, error) {
 	return "mock-token", "mock-identity", nil
 }
 
+func (m *MockAccountProvider) GetSchedulingMode() string {
+	return "PerformanceFirst"
+}
+
 func TestGeminiClient_Retry429(t *testing.T) {
 	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

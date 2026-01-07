@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/salacoste/siberia/siberia/config"
@@ -37,6 +39,10 @@ func NewService(database *db.Database, cfg *config.Manager) *Service {
 
 func (s *Service) GetQuotaService() *quota.Service {
 	return s.quota
+}
+
+func (s *Service) GetSchedulingMode() string {
+	return s.config.Get().SchedulingMode
 }
 
 // ... existing code ...
@@ -189,19 +195,57 @@ func (s *Service) GetRotatingToken() (string, string, error) {
 		return "", "", fmt.Errorf("no active accounts available")
 	}
 
-	idx := rand.Intn(len(accounts))
+	if len(accounts) == 0 {
+		return "", "", fmt.Errorf("no active accounts available")
+	}
+
+	// Sort by Tier (ULTRA > PRO > FREE)
+	sort.SliceStable(accounts, func(i, j int) bool {
+		return getTierWeight(accounts[i].Tier) > getTierWeight(accounts[j].Tier)
+	})
+
+	// Select from top tier?
+	// Basic implementation: Just Pick random from the top tier?
+	// Or weighted? Story says "Prioritize".
+	// Let's filter for the highest available tier and pick random from that group to spread load.
+
+	bestTier := accounts[0].Tier
+	var candidates []db.Account
+	for _, acc := range accounts {
+		if acc.Tier == bestTier {
+			candidates = append(candidates, acc)
+		}
+	}
+
+	if len(candidates) == 0 {
+		candidates = accounts // Fallback
+	}
+
+	idx := rand.Intn(len(candidates))
+	selected := candidates[idx]
 
 	// Check SessionToken first, fallback to Password if SessionToken is empty
-	token := string(accounts[idx].SessionToken)
+	token := string(selected.SessionToken)
 	if token == "" {
-		token = string(accounts[idx].Password)
+		token = string(selected.Password)
 	}
 
 	if token == "" {
-		return "", "", fmt.Errorf("selected account %d has no tokens", accounts[idx].ID)
+		return "", "", fmt.Errorf("selected account %d has no tokens", selected.ID)
 	}
 
-	return token, accounts[idx].Email, nil
+	return token, selected.Email, nil
+}
+
+func getTierWeight(tier string) int {
+	switch strings.ToUpper(tier) {
+	case db.TierUltra:
+		return 3
+	case db.TierPro:
+		return 2
+	default:
+		return 1
+	}
 }
 
 // UpdateQuota forces a refresh of the account's quota and tier status
@@ -232,6 +276,14 @@ func (s *Service) UpdateQuota(id uint) error {
 	statsJSON, err := json.Marshal(stats)
 	if err == nil {
 		acc.Stats = string(statsJSON)
+
+		// Sync Tier to Column
+		if stats.Tier != "" {
+			acc.Tier = strings.ToUpper(stats.Tier)
+		} else {
+			acc.Tier = db.TierFree
+		}
+
 		s.db.Save(&acc)
 	}
 
