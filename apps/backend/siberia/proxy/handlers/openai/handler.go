@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/salacoste/siberia/siberia/proxy/mappers/openai"
+	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 )
 
@@ -59,7 +60,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Unary Handler
-	gResp, err := h.UpstreamClient.GenerateContent(r.Context(), targetModel, geminiReq)
+	gResp, identity, err := h.UpstreamClient.GenerateContent(r.Context(), targetModel, geminiReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upstream Error: %v", err), http.StatusBadGateway)
 		return
@@ -72,6 +73,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	maskedIdentity := "unknown"
+	if len(identity) > 3 {
+		maskedIdentity = identity[:3] + "***"
+	} else if identity != "" {
+		maskedIdentity = "***"
+	}
+	middleware.SetAttribution(w, "openai-shim", targetModel, maskedIdentity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(oaResp)
 }

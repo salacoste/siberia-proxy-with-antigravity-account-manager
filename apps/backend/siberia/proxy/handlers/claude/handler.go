@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/salacoste/siberia/siberia/proxy/mappers/claude"
+	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 )
 
@@ -57,7 +58,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gResp, err := h.UpstreamClient.GenerateContent(r.Context(), targetModel, gReq)
+	gResp, identity, err := h.UpstreamClient.GenerateContent(r.Context(), targetModel, gReq)
 	if err != nil {
 		// Story-54: Fallback Retry on 400 (Invalid Argument)
 		// Often caused by "Thinking" blocks not being supported by the specific upstream model/region
@@ -68,8 +69,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Remap
 			if gReqRetry, errMap := claude.MapRequest(&cReq); errMap == nil {
-				if gRespRetry, errRetry := h.UpstreamClient.GenerateContent(r.Context(), targetModel, gReqRetry); errRetry == nil {
+				if gRespRetry, identRetry, errRetry := h.UpstreamClient.GenerateContent(r.Context(), targetModel, gReqRetry); errRetry == nil {
 					gResp = gRespRetry
+					identity = identRetry
 					err = nil
 				} else {
 					// Return original error if retry fails
@@ -90,6 +92,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	maskedIdentity := "unknown"
+	if len(identity) > 3 {
+		maskedIdentity = identity[:3] + "***"
+	} else if identity != "" {
+		maskedIdentity = "***"
+	}
+	middleware.SetAttribution(w, "anthropic-shim", targetModel, maskedIdentity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(cResp)
 }

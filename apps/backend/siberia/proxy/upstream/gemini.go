@@ -6,11 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
+	"github.com/salacoste/siberia/siberia/proxy/ratelimit"
 )
 
 const (
@@ -20,7 +22,7 @@ const (
 )
 
 type AccountProvider interface {
-	GetRotatingToken() (string, error)
+	GetRotatingToken() (string, string, error) // Returns (token, identity, error)
 }
 
 type GeminiClient struct {
@@ -52,14 +54,14 @@ func NewGeminiClient(accProvider AccountProvider) *GeminiClient {
 }
 
 // GenerateContent - Unary
-func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, error) {
+func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, string, error) {
 	urlPath := fmt.Sprintf("/v1/%s:generateContent", model)
 
 	for attempt := 0; attempt < MaxRetries; attempt++ {
 		// 1. Get Token
-		token, err := c.accounts.GetRotatingToken()
+		token, identity, err := c.accounts.GetRotatingToken()
 		if err != nil {
-			return nil, fmt.Errorf("auth error: %v", err)
+			return nil, "", fmt.Errorf("auth error: %v", err)
 		}
 
 		// 2. Build Request
@@ -74,7 +76,7 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 		if err != nil {
 			// Network error -> Maybe Fallback endpoint?
 			if attempt == MaxRetries-1 {
-				return nil, err
+				return nil, "", err
 			}
 			time.Sleep(time.Duration(attempt*100) * time.Millisecond) // Linear backoff
 			continue
@@ -85,15 +87,25 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 		if resp.StatusCode == 200 {
 			var gResp mappers.GeminiResponse
 			if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil {
-				return nil, fmt.Errorf("decode error: %v", err)
+				return nil, "", fmt.Errorf("decode error: %v", err)
 			}
-			return &gResp, nil
+			return &gResp, identity, nil
 		}
 
 		// Retry Logic
 		if resp.StatusCode == 429 || resp.StatusCode == 403 || resp.StatusCode == 401 {
-			// Quota/Auth -> Retry with NEW token (Next loop iteration calls GetRotatingToken)
-			fmt.Printf("Upstream %d: Retrying with new account...\n", resp.StatusCode)
+			// Read body for intelligent parsing
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resp.Body.Close() // Close early to reuse connection
+
+			rlErr := ratelimit.ParseError(string(bodyBytes))
+
+			// Quota/Auth -> Retry with NEW token
+			// Ideally we would respect rlErr.RetryAfter if it's a short rate limit,
+			// but for now we just log it and rotate account immediately.
+			fmt.Printf("Upstream %d: %s (Wait: %v). Retrying with new account...\n",
+				resp.StatusCode, rlErr.Original, rlErr.RetryAfter)
+
 			continue
 		}
 
@@ -108,10 +120,10 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 		}
 
 		// Other errors (400 Bad Request) -> Fail immediately
-		return nil, fmt.Errorf("upstream error %d: %s", resp.StatusCode, resp.Status)
+		return nil, "", fmt.Errorf("upstream error %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	return nil, fmt.Errorf("max retries exceeded")
+	return nil, "", fmt.Errorf("max retries exceeded")
 }
 
 // StreamGenerateContent - Streaming
@@ -126,7 +138,7 @@ func (c *GeminiClient) StreamGenerateContent(ctx context.Context, model string, 
 		urlPath := fmt.Sprintf("/v1/%s:streamGenerateContent?alt=sse", model)
 
 		for attempt := 0; attempt < MaxRetries; attempt++ {
-			token, err := c.accounts.GetRotatingToken()
+			token, _, err := c.accounts.GetRotatingToken()
 			if err != nil {
 				errCh <- err
 				return

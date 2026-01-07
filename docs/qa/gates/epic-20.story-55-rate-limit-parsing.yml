@@ -1,0 +1,18 @@
+story: story-55-rate-limit-parsing
+status: PASS
+date: 2026-01-06
+reviewer: qa-agent
+criteria_results:
+  - criteria: "Unit Test: Error body 'Try again in 5m' -> Returns 300s duration"
+    status: PASS
+    notes: "Verified in TestParseError/NLP_Minutes_Seconds"
+  - criteria: "Unit Test: Unknown 429 error -> Returns default fallback duration"
+    status: PASS
+    notes: "Verified in TestParseError/Unknown_Error_Fallback"
+  - criteria: "QuotaExhausted error triggers a longer backoff than RateLimitExceeded"
+    status: PASS
+    notes: "DefaultQuotaBackoff (1h) vs DefaultBackoff (30s) logic verified"
+risk_assessment:
+  level: LOW
+  notes: "Isolated logic in new package. Client integration is behind error handling condition."
+recommendation: "Ready for Merge"

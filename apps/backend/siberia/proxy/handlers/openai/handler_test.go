@@ -20,8 +20,8 @@ type MockClient struct {
 	Chunks []*mappers.GeminiResponse
 }
 
-func (m *MockClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, error) {
-	return m.Resp, m.Err
+func (m *MockClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, string, error) {
+	return m.Resp, "test-identity", m.Err
 }
 
 func (m *MockClient) StreamGenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (<-chan *mappers.GeminiResponse, <-chan error) {

@@ -10,18 +10,19 @@ import (
 )
 
 type AppConfig struct {
-	AppDataDir      string `json:"-"` // Added for internal use
-	Theme           string `json:"theme"`
-	Language        string `json:"language"`
-	AutoRefresh     bool   `json:"auto_refresh"`
-	RefreshInterval int    `json:"refresh_interval"`
-	DbSync          bool   `json:"db_sync"`
-	ProxyPort       int    `json:"proxy_port"`
-	UpstreamProxy   string `json:"upstream_proxy"`
-	TargetIDE       string `json:"target_ide"` // "vscode", "cursor", "windsurf"
-	WindowWidth     int    `json:"window_width"`
-	WindowHeight    int    `json:"window_height"`
-	MaxLogHistory   int    `json:"max_log_history"` // Default 5000
+	AppDataDir       string `json:"-"` // Added for internal use
+	Theme            string `json:"theme"`
+	Language         string `json:"language"`
+	AutoRefresh      bool   `json:"auto_refresh"`
+	RefreshInterval  int    `json:"refresh_interval"`
+	DbSync           bool   `json:"db_sync"`
+	ProxyPort        int    `json:"proxy_port"`
+	UpstreamProxy    string `json:"upstream_proxy"`
+	TargetIDE        string `json:"target_ide"` // "vscode", "cursor", "windsurf"
+	WindowWidth      int    `json:"window_width"`
+	WindowHeight     int    `json:"window_height"`
+	MaxLogHistory    int    `json:"max_log_history"` // Default 5000
+	AccessLogEnabled bool   `json:"access_log_enabled"`
 
 	// z.ai Provider
 	ZaiEnabled bool   `json:"zai_enabled"`
@@ -70,29 +71,30 @@ func NewManager() (*Manager, error) {
 	mgr := &Manager{
 		configPath: filepath.Join(appDir, "config.json"),
 		Config: AppConfig{
-			Theme:           "system",
-			Language:        "en",
-			AutoRefresh:     true,
-			RefreshInterval: 15,
-			DbSync:          true,
-			ProxyPort:       7100,
-			UpstreamProxy:   "",
-			TargetIDE:       "vscode", // Default
-			WindowWidth:     1024,
-			WindowHeight:    768,
-			MaxLogHistory:   5000,
-			ZaiEnabled:      false,
-			ZaiBaseURL:      "https://api.z.ai/v1",
-			ZaiApiKey:       "",
-			AuthEnabled:     false,
-			AuthToken:       "",
-			MasterKey:       "",
-			CloudEnabled:    false,
-			CloudUserID:     "",
-			CloudEmail:      "",
-			CloudLastSync:   "",
-			CloudSyncKey:    "",
-			AppDataDir:      appDir,
+			Theme:            "system",
+			Language:         "en",
+			AutoRefresh:      true,
+			RefreshInterval:  15,
+			DbSync:           true,
+			ProxyPort:        7100,
+			UpstreamProxy:    "",
+			TargetIDE:        "vscode", // Default
+			WindowWidth:      1024,
+			WindowHeight:     768,
+			MaxLogHistory:    5000,
+			AccessLogEnabled: true,
+			ZaiEnabled:       false,
+			ZaiBaseURL:       "https://api.z.ai/v1",
+			ZaiApiKey:        "",
+			AuthEnabled:      false,
+			AuthToken:        "",
+			MasterKey:        "",
+			CloudEnabled:     false,
+			CloudUserID:      "",
+			CloudEmail:       "",
+			CloudLastSync:    "",
+			CloudSyncKey:     "",
+			AppDataDir:       appDir,
 			ZaiMcpConfig: ZaiMcpConfig{
 				Enabled: false,
 				Port:    6200,

@@ -1,0 +1,15 @@
+story: story-67-attribution-headers
+status: PASS
+date: 2026-01-06
+reviewer: qa-agent
+criteria_results:
+  - criteria: "'x-antigravity-account' header in response"
+    status: PASS
+    notes: "Header now reflects masked account email (e.g. 'ant***') instead of 'unknown'."
+  - criteria: "Logs show clean one-liners when enabled"
+    status: PASS
+    notes: "Verified implementation in service.go with config toggle."
+risk_assessment:
+  level: LOW
+  notes: "Feature is verified and isolated."
+recommendation: "Ready for Release"

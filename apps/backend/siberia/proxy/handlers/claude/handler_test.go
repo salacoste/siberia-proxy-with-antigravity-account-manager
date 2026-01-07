@@ -22,9 +22,9 @@ type MockClient struct {
 	LastModel string
 }
 
-func (m *MockClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, error) {
+func (m *MockClient) GenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (*mappers.GeminiResponse, string, error) {
 	m.LastModel = model
-	return m.Resp, m.Err
+	return m.Resp, "test-identity", m.Err
 }
 
 func (m *MockClient) StreamGenerateContent(ctx context.Context, model string, req *mappers.GeminiRequest) (<-chan *mappers.GeminiResponse, <-chan error) {

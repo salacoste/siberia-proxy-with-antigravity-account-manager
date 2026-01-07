@@ -179,14 +179,14 @@ func (s *Service) CreateAccount(email, password, recovery, proxyGroup string) er
 }
 
 // GetRotatingToken returns a valid session token from the pool of active accounts.
-func (s *Service) GetRotatingToken() (string, error) {
+func (s *Service) GetRotatingToken() (string, string, error) {
 	var accounts []db.Account
 	if err := s.db.Where("is_active = ?", true).Find(&accounts).Error; err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if len(accounts) == 0 {
-		return "", fmt.Errorf("no active accounts available")
+		return "", "", fmt.Errorf("no active accounts available")
 	}
 
 	idx := rand.Intn(len(accounts))
@@ -198,10 +198,10 @@ func (s *Service) GetRotatingToken() (string, error) {
 	}
 
 	if token == "" {
-		return "", fmt.Errorf("selected account %d has no tokens", accounts[idx].ID)
+		return "", "", fmt.Errorf("selected account %d has no tokens", accounts[idx].ID)
 	}
 
-	return token, nil
+	return token, accounts[idx].Email, nil
 }
 
 // UpdateQuota forces a refresh of the account's quota and tier status

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
+	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 )
 
@@ -89,18 +90,26 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Unary Call
-	gResp, err := h.UpstreamClient.GenerateContent(r.Context(), model, &gReq)
+	gResp, identity, err := h.UpstreamClient.GenerateContent(r.Context(), model, &gReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upstream Error: %v", err), http.StatusBadGateway)
 		return
 	}
 
 	// 5. Encode Response
+	maskedIdentity := "unknown"
+	if len(identity) > 3 {
+		maskedIdentity = identity[:3] + "***"
+	} else if identity != "" {
+		maskedIdentity = "***"
+	}
+	middleware.SetAttribution(w, "google", model, maskedIdentity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(gResp)
 }
 
 func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, model string, req *mappers.GeminiRequest) {
+	middleware.SetAttribution(w, "google", model, "unknown")
 	w.Header().Set("Content-Type", "application/json") // Gemini stream is usually SSE or JSON array stream?
 	// Gemini API stream is NOT SSE normally. It's a bracketed JSON list if using REST?
 	// ACTUALLY: `streamGenerateContent` returns a stream of `GenerateContentResponse`.

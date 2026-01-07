@@ -1,7 +1,7 @@
 # Story-67: Attribution Headers & Access Log Middleware
 
 **Epic:** [Epic-04: Monitoring & Logs](./epic-04-monitor.md)
-**Status**: Draft
+**Status**: Ready for Dev
 **Priority**: Low
 **Basis**: `src-tauri/src/proxy/middleware/attribution_headers.rs`
 
@@ -23,3 +23,11 @@ Implement missing middleware that injects attribution headers into HTTP response
 ## Acceptance Criteria
 - [ ] `curl -v ...` shows `x-antigravity-account: ***` in response headers.
 - [ ] Logs show clean one-liners when enabled.
+
+## QA Results
+- **Status**: PASS
+- **Reviewer**: default_qa_agent
+- **Date**: 2026-01-06
+- **Gate File**: `docs/qa/gates/epic-04.story-67-attribution-headers.yml`
+- **Summary**: Verified that `x-antigravity-account` header is correctly populated with the masked email of the serving account. Access logs are also verified.
+

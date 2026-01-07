@@ -324,6 +324,11 @@ func (s *Service) emitFullEvent(req *http.Request, resp *http.Response, start ti
 
 	// Non-blocking Emit via Manager
 	s.TelemetryManager.Emit(event)
+
+	// Concise Access Log (Story-67)
+	if s.config.AccessLogEnabled {
+		log.Printf("[Access] %s %s %d %dms", req.Method, req.URL.Path, status, duration)
+	}
 }
 
 // telemetryWorker removed. Replaced by TelemetryManager.

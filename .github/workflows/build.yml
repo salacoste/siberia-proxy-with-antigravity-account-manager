@@ -44,19 +44,39 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev
         
-        # Robust Workaround: Find where ayatana installed the .pc file and symlink it
-        AYATANA_PC=$(find /usr -name "ayatana-appindicator3-0.1.pc" 2>/dev/null | head -n 1)
+        # Robust Workaround: Check if pkg-config finds it first
+        if pkg-config --exists appindicator3-0.1; then
+          echo "Success: appindicator3-0.1 found natively."
+          exit 0
+        fi
+
+        echo "Package not found natively. Attempting to locate ayatana-appindicator3-0.1.pc..."
+        
+        # Limit search to likely directories to avoid timeout/permission errors on /usr
+        AYATANA_PC=$(find /usr/lib /usr/share -name "ayatana-appindicator3-0.1.pc" 2>/dev/null | head -n 1)
+        
         if [ -z "$AYATANA_PC" ]; then
-          echo "Error: ayatana-appindicator3-0.1.pc not found"
+          echo "Error: ayatana-appindicator3-0.1.pc not found in target locations."
+          # Debug: List what IS there
+          echo "Debug: Listing *indicator*.pc files:"
+          find /usr/lib /usr/share -name "*indicator*.pc" 2>/dev/null || true
           exit 1
         fi
+        
         echo "Found Ayatana PC at: $AYATANA_PC"
         PC_DIR=$(dirname "$AYATANA_PC")
-        sudo ln -sf "$AYATANA_PC" "$PC_DIR/appindicator3-0.1.pc"
+        
+        # Symlink if target doesn't exist
+        if [ ! -f "$PC_DIR/appindicator3-0.1.pc" ]; then
+           sudo ln -sf "$AYATANA_PC" "$PC_DIR/appindicator3-0.1.pc"
+           echo "Created symlink at $PC_DIR/appindicator3-0.1.pc"
+        else
+           echo "Symlink or file already exists at $PC_DIR/appindicator3-0.1.pc"
+        fi
         
         # Verify pkg-config sees it
         export PKG_CONFIG_PATH="$PC_DIR:$PKG_CONFIG_PATH"
-        pkg-config --print-errors --exists appindicator3-0.1 && echo "Success: pkg-config found appindicator3-0.1"
+        pkg-config --print-errors --exists appindicator3-0.1 && echo "Success: pkg-config found appindicator3-0.1 via patching"
 
     - name: Build
       working-directory: ./apps/backend

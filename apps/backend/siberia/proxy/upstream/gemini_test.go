@@ -15,9 +15,9 @@ type MockAccountProvider struct {
 	TokenCount int
 }
 
-func (m *MockAccountProvider) GetRotatingToken() (string, error) {
+func (m *MockAccountProvider) GetRotatingToken() (string, string, error) {
 	m.TokenCount++
-	return "mock-token", nil
+	return "mock-token", "mock-identity", nil
 }
 
 func TestGeminiClient_Retry429(t *testing.T) {
@@ -40,7 +40,9 @@ func TestGeminiClient_Retry429(t *testing.T) {
 	// Speed up backoff
 	// Since we hardcoded sleep in gemini.go, this test might be slow (100ms). That's fine.
 
-	_, err := client.GenerateContent(context.Background(), "gemini-1.5-pro", &mappers.GeminiRequest{})
+	// Since we hardcoded sleep in gemini.go, this test might be slow (100ms). That's fine.
+
+	_, _, err := client.GenerateContent(context.Background(), "gemini-1.5-pro", &mappers.GeminiRequest{})
 	if err != nil {
 		t.Fatalf("Expected success after retry, got: %v", err)
 	}
@@ -80,7 +82,7 @@ func TestGeminiClient_Failover500(t *testing.T) {
 	client.fallbackURL = srvFallback.URL
 	client.endpoint = srvPrimary.URL
 
-	_, err := client.GenerateContent(context.Background(), "gemini-1.5-pro", &mappers.GeminiRequest{})
+	_, _, err := client.GenerateContent(context.Background(), "gemini-1.5-pro", &mappers.GeminiRequest{})
 	if err != nil {
 		t.Fatalf("Expected failover success, got error: %v", err)
 	}

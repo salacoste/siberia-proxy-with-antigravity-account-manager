@@ -5,18 +5,18 @@
 @layer base {
   :root {
     /* Corca Light Mode */
-    --background: 210 20% 98%;   /* #F9FAFB (Gray-50) / #F3F4F6 (Gray-100) - Main BG */
+    --background: 240 5% 96%;   /* #F3F4F6 (Gray-100) - App Shell */
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;           /* #FFFFFF - Cards pop against Gray BG */
+    --card: 0 0% 100%;          /* #FFFFFF - Cards */
     --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Corca Action Blue */
-    --primary: 221 83% 53%;      /* #2563EB (Blue-600) - Text/Icon Action */
-    --primary-foreground: 210 40% 98%;
+    /* Corca Blue - Primary Action */
+    --primary: 221 83% 53%;     /* #3B82F6 (Blue-500) */
+    --primary-foreground: 210 40% 98%; /* #F0F9FF */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -24,41 +24,43 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 214 94% 93%;       /* #DBEAFE (Blue-100) - Hover/Active Backgrounds */
-    --accent-foreground: 221 83% 53%; /* #2563EB (Blue-600) */
+    --accent: 210 40% 96.1%;    /* Gentle Gray for list items? Or Blue Haze? */
+    /* Let's try Corca "Blue Tint" for accents if desired, or stick to subtle gray for now */
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 13% 91%;       /* Subtle borders */
+    --border: 220 13% 91%;      /* Subtle Borders */
     --input: 220 13% 91%;
-    --ring: 221 83% 53%;         /* Focus Ring matches Primary */
+    --ring: 221 83% 53%;        /* Focus = Primary Blue */
 
-    --radius: 0.625rem;          /* 10px Radius */
+    --radius: 0.5rem;           /* 8px Radius */
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 240 5% 99%; /* #FCFCFD (Very Light Gray) */
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    /* Corca Dark Mode: Deep Gray/Black */
-    --background: 224 71% 4%;    /* #02040a (Deep Blue/Black) or #09090b (Zinc-950) */
+    /* Corca Dark Mode Adaptation (Deep Gray/Blue) */
+    --background: 224 71% 4%;    /* #02040a */
     --foreground: 210 40% 98%;
 
-    --card: 224 71% 4%;          /* Seamless/Flat look in dark mode usually */
+    --card: 224 71% 4%;
     --card-foreground: 210 40% 98%;
 
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;      /* Brighter Blue for Dark Mode */
-    --primary-foreground: 0 0% 100%;
+    /* Bright Blue for Dark Mode Visibility */
+    --primary: 217 91% 60%;      /* #3B82F6 equivalent */
+    --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
