@@ -53,11 +53,9 @@ export function MigrationWizard({ open, onOpenChange, onImportComplete }: Migrat
 
     const handleImport = async () => {
         setStep('importing');
-        let importedCount = 0;
         for (const token of selectedAccounts) {
             try {
                 await ImportDiscoveredAccount(token);
-                importedCount++;
             } catch (e) {
                 console.error("Import failed for token", e);
             }

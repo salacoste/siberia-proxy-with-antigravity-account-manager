@@ -125,3 +125,11 @@ export function UpdateScript(arg1, arg2) {
 export function UploadSession(arg1) {
   return window['go']['main']['App']['UploadSession'](arg1);
 }
+
+export function ScanIDEAccounts() {
+  return window['go']['main']['App']['ScanIDEAccounts']();
+}
+
+export function ImportDiscoveredAccount(arg1) {
+  return window['go']['main']['App']['ImportDiscoveredAccount'](arg1);
+}
