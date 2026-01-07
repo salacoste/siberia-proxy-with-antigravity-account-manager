@@ -41,6 +41,7 @@ type ProfileData struct {
 	Email       string `json:"email"`
 	DataBlob    string `json:"data_blob"`
 	IV          string `json:"iv"`
+	UpdatedAt   string `json:"updated_at"`
 	AccessToken string `json:"-"` // Helper
 }
 

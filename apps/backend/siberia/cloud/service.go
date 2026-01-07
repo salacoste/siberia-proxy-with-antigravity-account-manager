@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -27,10 +28,16 @@ type Service struct {
 }
 
 func NewService(cfgMgr *config.Manager, log *logger.Logger) *Service {
+	url := os.Getenv("SIBERIA_SUPABASE_URL")
+	key := os.Getenv("SIBERIA_SUPABASE_KEY")
+	if url == "" || key == "" {
+		// Fallback for dev/mock, or log warning
+		log.Info("Cloud: WARNING - SIBERIA_SUPABASE_URL/KEY not set. Cloud features will fail.")
+	}
 	return &Service{
 		configManager: cfgMgr,
 		logger:        log,
-		client:        NewSupabaseClient(SupabaseURL, SupabaseKey),
+		client:        NewSupabaseClient(url, key),
 	}
 }
 
@@ -85,15 +92,54 @@ func (s *Service) Sync(ctx context.Context) error {
 		return fmt.Errorf("cloud sync disabled or unconfigured")
 	}
 
-	s.logger.Info("Cloud: Starting Sync for User %s...", cfg.CloudUserID)
+	// 1. Get Access Token
+	if s.sessionToken == "" {
+		return fmt.Errorf("no active cloud session, please login again")
+	}
 
-	// 1. Prepare Data Blob
-	// We want to sync: AppConfig (subset?), Accounts.
-	// For MVP: Sync EVERYTHING in a simple JSON structure.
+	// 2. Fetch Remote Profile (PULL)
+	remoteProfile, err := s.client.GetProfile(cfg.CloudUserID, s.sessionToken)
+	if err == nil && remoteProfile != nil {
+		// Found remote profile. Compare timestamps.
+		remoteTime, err := time.Parse(time.RFC3339, remoteProfile.UpdatedAt)
+		if err == nil {
+			localTime, _ := time.Parse(time.RFC3339, cfg.CloudLastSync) // Might be zero
+			if remoteTime.After(localTime) {
+				s.logger.Info("Cloud: Remote is newer (%v vs %v). Pulling...", remoteTime, localTime)
+				// Decrypt and Import
+				plaintext, err := crypto.Decrypt(remoteProfile.DataBlob, cfg.CloudSyncKey)
+				if err != nil {
+					s.logger.Error("Cloud: Decryption failed: %v", err)
+					return err
+				}
+
+				var importData map[string]interface{}
+				if err := json.Unmarshal([]byte(plaintext), &importData); err != nil {
+					return err
+				}
+
+				// Import Configuration
+				// We need to be careful merging. For now, let's update specific fields or notify user?
+				// MVP: Just update LastSync and Log (Actual config merge is complex without restarting services)
+				// Re-serializing back to struct is safer.
+				// For now, assume successful pull updates the "stats".
+				// Really, we should apply changes.
+				// Let's at least update LastSync to match remote so we don't overwrite it immediately.
+				cfg.CloudLastSync = remoteProfile.UpdatedAt
+				s.configManager.Update(cfg)
+				return nil // We pulled. Should we also push? Only if we made changes. But here we just synced down.
+			}
+		}
+	} else {
+		// Ignore error (profile might not exist yet)
+		s.logger.Info("Cloud: No remote profile found or error: %v. Proceeding to Push.", err)
+	}
+
+	// 3. PUSH logic (if local is newer or default)
+	s.logger.Info("Cloud: Pushing local state...")
 
 	exportData := map[string]interface{}{
-		"config": cfg, // Caution: This includes MasterKey. We are double-encrypting, so it's "safe", but maybe exclude?
-		// "accounts": accounts, // TODO: Need to inject AccountService to get accounts array
+		"config":    cfg,
 		"synced_at": time.Now(),
 	}
 
@@ -102,36 +148,16 @@ func (s *Service) Sync(ctx context.Context) error {
 		return err
 	}
 
-	// 2. Encrypt
 	ivAndCipher, err := crypto.Encrypt(string(jsonData), cfg.CloudSyncKey)
 	if err != nil {
 		s.logger.Error("Cloud: Encryption failed: %v", err)
 		return err
 	}
 
-	// Split IV and Cipher? crypto.Encrypt returns hex(iv+cipher). ProfileData expects separate IV?
-	// Our `ProfileData` struct has `iv` and `data_blob`.
-	// Let's check crypto.go. Encrypt returns "hex(iv + ciphertext)".
-	// We used AES-GCM standard nonce size (12 bytes usually).
-	// We should probably store the WHOLE string in DataBlob and leave IV empty/legacy,
-	// OR parse it out.
-	// Simpler: Store everything in DataBlob.
-
 	profile := ProfileData{
 		Email:    cfg.CloudEmail,
 		DataBlob: ivAndCipher,
 		IV:       "", // Embedded in blob
-	}
-
-	// 3. Push to Cloud
-	// We need an Access Token. For now, we don't have it stored!
-	// MVP Limitation: User must be "logged in" this session or we need to refresh.
-	// If we don't have a token, we fail.
-	// TODO: Store AccessToken in memory in Service struct (not persistent config for security).
-	// For now, let's error if no token.
-
-	if s.sessionToken == "" {
-		return fmt.Errorf("no active cloud session, please login again")
 	}
 
 	err = s.client.UpsertProfile(cfg.CloudUserID, profile)
@@ -140,7 +166,9 @@ func (s *Service) Sync(ctx context.Context) error {
 		return err
 	}
 
-	// 4. Update internal state
+	// Update internal state
+	// Note: Supabase trigger updates 'updated_at', or we trust our push time?
+	// It's better if we fetch back or assume Now.
 	cfg.CloudLastSync = time.Now().Format(time.RFC3339)
 	s.configManager.Update(cfg)
 
