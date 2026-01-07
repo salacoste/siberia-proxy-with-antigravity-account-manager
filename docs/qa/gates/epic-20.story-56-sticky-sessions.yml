@@ -1,0 +1,38 @@
+schema: 1
+story: 'epic-20.story-56'
+story_title: 'Session Fingerprinting & Sticky Sessions'
+gate: PASS
+status_reason: 'All acceptance criteria passed, including late addition of Session Header support.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-07T16:25:00+03:00'
+
+top_issues: []
+
+waiver: { active: false }
+
+evidence:
+  tests_reviewed: 3
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2]
+    ac_gaps: []
+
+req_validation:
+  security:
+    status: PASS
+    notes: 'Fingerprinting uses SHA256, no PII leakage in logs observed.'
+  performance:
+    status: PASS
+    notes: 'Hashing is lightweight.'
+  reliability:
+    status: PASS
+    notes: 'Fallback to random selection if hash fails or no content.'
+  maintainability:
+    status: PASS
+    notes: 'Clean separation of session package.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Consider expanding fingerprinting to include other headers or user metadata.'
+      refs: ['apps/backend/siberia/proxy/session/fingerprint.go']

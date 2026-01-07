@@ -3,6 +3,7 @@ package accounts
 import (
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"math/rand"
 	"sort"
 	"strings"
@@ -193,14 +194,11 @@ func (s *Service) CreateAccount(email, password, recovery, proxyGroup string) er
 }
 
 // GetRotatingToken returns a valid session token from the pool of active accounts.
-func (s *Service) GetRotatingToken() (string, string, error) {
+// If fingerprint is provided, it uses it to deterministically select an account (Sticky Session).
+func (s *Service) GetRotatingToken(fingerprint string) (string, string, error) {
 	var accounts []db.Account
 	if err := s.db.Where("is_active = ?", true).Find(&accounts).Error; err != nil {
 		return "", "", err
-	}
-
-	if len(accounts) == 0 {
-		return "", "", fmt.Errorf("no active accounts available")
 	}
 
 	if len(accounts) == 0 {
@@ -229,8 +227,22 @@ func (s *Service) GetRotatingToken() (string, string, error) {
 		candidates = accounts // Fallback
 	}
 
-	idx := rand.Intn(len(candidates))
-	selected := candidates[idx]
+	var selected db.Account
+	if fingerprint != "" {
+		// Deterministic Selection (Sticky)
+		hash := crc32.ChecksumIEEE([]byte(fingerprint))
+		idx := int(hash) % len(candidates)
+		// Ensure positive index
+		if idx < 0 {
+			idx = -idx
+		}
+		selected = candidates[idx]
+		// fmt.Printf("[Sticky] Fingerprint: %s -> Account: %s\n", fingerprint, selected.Email)
+	} else {
+		// Random Selection (Round Robin-ish)
+		idx := rand.Intn(len(candidates))
+		selected = candidates[idx]
+	}
 
 	// Check SessionToken first, fallback to Password if SessionToken is empty
 	token := string(selected.SessionToken)
