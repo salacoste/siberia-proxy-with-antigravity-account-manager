@@ -23,6 +23,7 @@ import (
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/claude"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/gemini"
+	"github.com/salacoste/siberia/siberia/proxy/handlers/legacy"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/openai"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/providers"
@@ -45,6 +46,7 @@ type Service struct {
 	mu                sync.RWMutex
 	SkipWailsEvents   bool // For testing
 	openaiHandler     *openai.Handler
+	legacyHandler     http.Handler
 
 	claudeHandler http.Handler
 	geminiHandler http.Handler
@@ -67,6 +69,7 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 	oaHandler := openai.NewHandler(geminiClient)
 	clHandler := claude.NewHandler(geminiClient)
 	gmHandler := gemini.NewHandler(geminiClient)
+	lgHandler := legacy.NewHandler(geminiClient)
 
 	svc := &Service{
 		proxy:             proxy,
@@ -77,6 +80,8 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 
 		TelemetryManager: NewTelemetryManager(1000, analyticsEngine), // Buffer 1000 events
 		openaiHandler:    oaHandler,
+
+		legacyHandler: lgHandler,
 
 		claudeHandler: clHandler,
 		geminiHandler: gmHandler,
@@ -395,6 +400,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// OpenAI Chat Completions
 	if r.URL.Path == "/v1/chat/completions" && r.Method == "POST" {
 		s.openaiHandler.ServeHTTP(w, r)
+		return
+	}
+
+	// Legacy Codex Completions
+	if r.URL.Path == "/v1/completions" && r.Method == "POST" {
+		s.legacyHandler.ServeHTTP(w, r)
 		return
 	}
 
