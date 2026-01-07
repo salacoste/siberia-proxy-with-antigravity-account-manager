@@ -14,6 +14,7 @@ import (
 	"github.com/salacoste/siberia/siberia/config"
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/ratelimit"
+	"github.com/salacoste/siberia/siberia/proxy/session"
 	"github.com/salacoste/siberia/siberia/zai"
 )
 
@@ -24,7 +25,7 @@ const (
 )
 
 type AccountProvider interface {
-	GetRotatingToken() (string, string, error) // Returns (token, identity, error)
+	GetRotatingToken(fingerprint string) (string, string, error) // Returns (token, identity, error)
 	GetSchedulingMode() string
 }
 
@@ -61,8 +62,20 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 	urlPath := fmt.Sprintf("/v1/%s:generateContent", model)
 
 	for attempt := 0; attempt < MaxRetries; attempt++ {
-		// 1. Get Token
-		token, identity, err := c.accounts.GetRotatingToken()
+		// 1. Get Token (Sticky)
+		var fingerprint string
+		if val := ctx.Value(session.SessionIDKey); val != nil {
+			if str, ok := val.(string); ok && str != "" {
+				fingerprint = str
+			}
+		}
+
+		if fingerprint == "" {
+			content := session.ExtractFirstUserMessage(req)
+			fingerprint = session.GenerateFingerprint(model, content)
+		}
+
+		token, identity, err := c.accounts.GetRotatingToken(fingerprint)
 		if err != nil {
 			return nil, "", fmt.Errorf("auth error: %v", err)
 		}
@@ -188,7 +201,21 @@ func (c *GeminiClient) StreamGenerateContent(ctx context.Context, model string, 
 		urlPath := fmt.Sprintf("/v1/%s:streamGenerateContent?alt=sse", model)
 
 		for attempt := 0; attempt < MaxRetries; attempt++ {
-			token, _, err := c.accounts.GetRotatingToken()
+			// Sticky Session Logic
+			// Sticky Session Logic
+			var fingerprint string
+			if val := ctx.Value(session.SessionIDKey); val != nil {
+				if str, ok := val.(string); ok && str != "" {
+					fingerprint = str
+				}
+			}
+
+			if fingerprint == "" {
+				content := session.ExtractFirstUserMessage(req)
+				fingerprint = session.GenerateFingerprint(model, content)
+			}
+
+			token, _, err := c.accounts.GetRotatingToken(fingerprint)
 			if err != nil {
 				errCh <- err
 				return
@@ -255,7 +282,10 @@ func (c *GeminiClient) GenerateImage(ctx context.Context, req *mappers.ImageRequ
 	// We use the same account pool rotation logic
 	for attempt := 0; attempt < MaxRetries; attempt++ {
 		// 1. Get Token (and Identity)
-		token, identity, err := c.accounts.GetRotatingToken()
+		// Image Gen is expensive/rare, we can use random (empty fingerprint) or try to hash prompt
+		// For now, random is fine as sticking to same account isn't as critical for image gen context?
+		// Actually, Image Gen is stateless usually.
+		token, identity, err := c.accounts.GetRotatingToken("")
 		if err != nil {
 			return nil, "", fmt.Errorf("auth error: %v", err)
 		}

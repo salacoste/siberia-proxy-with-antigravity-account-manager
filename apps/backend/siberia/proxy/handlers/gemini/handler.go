@@ -1,6 +1,7 @@
 package gemini
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
+	"github.com/salacoste/siberia/siberia/proxy/session"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 )
 
@@ -90,7 +92,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Unary Call
-	gResp, identity, err := h.UpstreamClient.GenerateContent(r.Context(), model, &gReq)
+	// 4a. Inject Session ID from Header if present (Sticky Sessions)
+	ctx := r.Context()
+	if sessionID := r.Header.Get("x-siberia-session-id"); sessionID != "" {
+		ctx = context.WithValue(ctx, session.SessionIDKey, sessionID)
+	}
+
+	gResp, identity, err := h.UpstreamClient.GenerateContent(ctx, model, &gReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upstream Error: %v", err), http.StatusBadGateway)
 		return
@@ -138,7 +146,13 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, model str
 	w.Write([]byte("["))
 	flusher.Flush()
 
-	ch, errCh := h.UpstreamClient.StreamGenerateContent(r.Context(), model, req)
+	// Inject Session ID for stream too
+	ctx := r.Context()
+	if sessionID := r.Header.Get("x-siberia-session-id"); sessionID != "" {
+		ctx = context.WithValue(ctx, session.SessionIDKey, sessionID)
+	}
+
+	ch, errCh := h.UpstreamClient.StreamGenerateContent(ctx, model, req)
 
 	first := true
 	for {
