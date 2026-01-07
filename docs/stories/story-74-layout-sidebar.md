@@ -1,7 +1,7 @@
 # Story-74: Layout & Sidebar Polish (Corca Adaptation)
 
 **Epic**: [Epic-15: Visual Redesign](./epic-15-visual-redesign.md)
-**Status**: Draft
+**Status**: Ready for Dev
 **Priority**: High
 
 ## Goal
@@ -30,3 +30,10 @@ Apply the final "Corca" aesthetic polish to the application shell. This focuses 
 - [ ] Sidebar navigation uses the correct technical font.
 - [ ] Application has a distinct "Page on Canvas" feel (Gray background, White Cards).
 - [ ] No visual clash between the new Blue components and the layout.
+
+## QA Results
+- **Status**: PASS
+- **Reviewer**: qa-agent
+- **Date**: 2026-01-07
+- **Gate File**: `docs/qa/gates/epic-15.story-74-layout-sidebar.yml`
+- **Summary**: Verified layout polish. Sidebar uses correct technical typography, and the gray application background provides excellent separation for content cards.
