@@ -77,6 +77,9 @@ jobs:
         # Verify pkg-config sees it
         export PKG_CONFIG_PATH="$PC_DIR:$PKG_CONFIG_PATH"
         pkg-config --print-errors --exists appindicator3-0.1 && echo "Success: pkg-config found appindicator3-0.1 via patching"
+        
+        # Persist to subsequent steps
+        echo "PKG_CONFIG_PATH=$PC_DIR:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
     - name: Build
       working-directory: ./apps/backend
