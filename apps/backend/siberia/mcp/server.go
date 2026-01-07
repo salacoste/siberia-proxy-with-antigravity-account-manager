@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,7 +52,6 @@ func (s *McpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
 	var result interface{}
 	var err error
 
@@ -86,7 +84,7 @@ func (s *McpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, req.ID, -32602, "Invalid params")
 			return
 		}
-		result, err = s.callTool(ctx, params.Name, params.Arguments)
+		result, err = s.callTool(params.Name, params.Arguments)
 		if err != nil {
 			s.writeError(w, req.ID, -32000, err.Error())
 			return
@@ -109,7 +107,7 @@ func (s *McpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.writeResponse(w, req.ID, result)
 }
 
-func (s *McpServer) callTool(ctx context.Context, name string, args map[string]interface{}) (interface{}, error) {
+func (s *McpServer) callTool(name string, args map[string]interface{}) (interface{}, error) {
 	return s.Registry.Call(name, args)
 }
 

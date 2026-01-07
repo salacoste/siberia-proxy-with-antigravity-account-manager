@@ -19,6 +19,7 @@ import (
 	"github.com/salacoste/siberia/siberia/migration"
 	"github.com/salacoste/siberia/siberia/modules/injection"
 	"github.com/salacoste/siberia/siberia/modules/process"
+	"github.com/salacoste/siberia/siberia/oauth"
 	"github.com/salacoste/siberia/siberia/proxy"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/quota"
@@ -526,4 +527,53 @@ func (a *App) GetScript() (ScriptState, error) {
 		Code:   a.proxyService.ScriptEngine.Script,
 		Active: a.proxyService.ScriptEngine.Active,
 	}, nil
+}
+
+// === OAuth API ===
+
+// LoginWithOAuth initiates the local loopback OAuth flow
+func (a *App) LoginWithOAuth(providerId string) error {
+	// 1. Setup Loopback Server
+	srv := oauth.NewServer()
+	// TODO: Use better random state
+	state := fmt.Sprintf("state-%d", 12345)
+
+	port, err := srv.Start(state)
+	if err != nil {
+		return fmt.Errorf("failed to start auth server: %w", err)
+	}
+
+	// 2. Construct Auth URL
+	// This is a placeholder. Real implementation requires Config or Provider Registry.
+	redirectURL := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
+
+	// Example: Google
+	clientID := "PLACEHOLDER_CLIENT_ID"
+	scope := "email profile"
+	authURL := fmt.Sprintf("https://accounts.google.com/o/oauth2/v2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&state=%s",
+		clientID, redirectURL, scope, state)
+
+	runtime.LogInfo(a.ctx, fmt.Sprintf("Opening Auth URL: %s", authURL))
+
+	// 3. Open Browser
+	runtime.BrowserOpenURL(a.ctx, authURL)
+
+	// 4. Wait for Code
+	// Timeout after 2 minutes
+	ctx, cancel := context.WithTimeout(a.ctx, 120e9) // 120 seconds
+	defer cancel()
+
+	code, err := srv.WaitForCode(ctx)
+	if err != nil {
+		return fmt.Errorf("authentication failed or timed out: %w", err)
+	}
+
+	runtime.LogInfo(a.ctx, "Successfully captured OAuth Code")
+
+	// 5. Exchange Code (Future Step)
+	// For now, we just prove the flow worked.
+	// a.accountService.ExchangeAndAdd(code)
+	fmt.Printf("Captured Code: %s\n", code)
+
+	return nil
 }
