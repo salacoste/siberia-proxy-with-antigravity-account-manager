@@ -1,0 +1,23 @@
+story: story-61-proto-decoder
+status: PASS
+date: 2026-01-07
+reviewer: Quinn (QA)
+test_results:
+  unit_tests:
+    - name: TestExtractRefreshToken
+      result: PASS
+      notes: Correctly extracts token from nested message (Field 6 -> Field 3).
+    - name: TestExtractRefreshToken_Invalid
+      result: PASS
+      notes: Handles empty/malformed inputs safely.
+  manual_checks:
+    - check: Logic Review
+      result: PASS
+      notes: Uses `protowire` for safe parsing without full schema dependency.
+risk_assessment:
+  level: LOW
+  notes: Pure utility function, isolated from main logic. No side effects.
+completion_criteria:
+  - [x] Input: Binary blob from Android Studio DB
+  - [x] Output: Valid Refresh Token string
+  - [x] Unit Test: Verify against a known sample blob

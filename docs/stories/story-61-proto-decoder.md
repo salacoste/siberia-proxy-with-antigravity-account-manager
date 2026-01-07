@@ -1,7 +1,7 @@
 # Story-61: Protobuf Token Decoder
 
 **Epic:** [Epic-21: Zero-Config Onboarding](./epic-21-ide-integration.md)
-**Status**: Draft
+**Status**: Ready for Review
 **Priority**: Medium
 **Basis**: `docs/gap_analysis_deep_dive.md`
 
@@ -22,3 +22,17 @@ The tokens in the IDE databases are stored as binary Protobuf blobs. This story 
 - [ ] Input: Binary blob from Android Studio DB.
 - [ ] Output: Valid Refresh Token string.
 - [ ] Unit Test: Verify against a known sample blob (if available/mocked).
+
+## Dev Agent Record
+### File List
+- `apps/backend/siberia/migration/decoder.go`
+- `apps/backend/siberia/migration/decoder_test.go`
+- `apps/backend/siberia/migration/sqlite.go` (Modified return type)
+
+## QA Results
+- **Status**: PASS
+- **Date**: 2026-01-07
+- **Gate**: [epic-21.story-61-proto-decoder.yml](../qa/gates/epic-21.story-61-proto-decoder.yml)
+- **Notes**: Unit tests confirm correct decoding of nested Protobuf fields.
+
+
