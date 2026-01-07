@@ -19,12 +19,15 @@ Replace the in-memory `MockServer` in `siberia/modules/sync` with a real client 
 
 ## Technical Notes
 -   Use `env` variables or build flags for Supabase URL/Key.
--   **Security**: The "Master Password" encryption (Story-33) remains unchanged. We just store the *result* in Supabase.
+-   **Supabase Go-Lang Strategy**:
+    -   There is no official Go SDK.
+    -   Use `resty` or standard `net/http` to hit the REST API (`/auth/v1` for GoTrue, `/rest/v1` for PostgREST).
+    -   **Security**: The "Master Password" encryption (Story-33) remains unchanged. We just store the *result* in Supabase.
 
 ## Acceptance Criteria
--   [x] Login with real credentials works.
--   [x] "Push" persists data across app restarts (checked via Supabase Dashboard or second device).
--   [x] "Pull" retrieves the correct encrypted blob.
+-   [ ] Login with real credentials works.
+-   [ ] "Push" persists data across app restarts (checked via Supabase Dashboard or second device).
+-   [ ] "Pull" retrieves the correct encrypted blob.
 
 ## QA Results (2026-01-04)
 **Agent**: Quinn (QA)

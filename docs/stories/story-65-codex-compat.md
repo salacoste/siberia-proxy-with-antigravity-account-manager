@@ -14,9 +14,14 @@ Support legacy OpenAI completions endpoints (`/v1/completions`) and the specific
     - Handle `/v1/completions` and `/v1/responses`.
 - [ ] **Task 2: Payload Transformation**
     - Map `input` (code blocks) + `instructions` (system prompt) -> `messages` array.
-    - Handle specific Codex tool types (`local_shell_call`, `web_search_call`) if they appear in the input array.
+    - **Specific Payload Schema**:
+      - `input`: Array of strings (code lines). Join with newline.
+      - `instructions`: String (System Message).
+      - `stop`: Array of strings (Forward to upstream).
+    - Handle specific Codex tool types if present (Mapping `tool_calls` to OpenAI standard if schema differs, otherwise pass-through).
 - [ ] **Task 3: Response Mapping**
-    - Convert the Chat Response back to a "Text Completion" response format (`choices[0].text`).
+    - Convert Chat Response (`choices[0].message.content`) back to Legacy Text Response (`choices[0].text`).
+    - ensure `object`: "text_completion" in response JSON.
 
 ## Acceptance Criteria
 - [ ] `curl /v1/completions` with `model: gpt-3.5-turbo-instruct` (or mapped model) works.
