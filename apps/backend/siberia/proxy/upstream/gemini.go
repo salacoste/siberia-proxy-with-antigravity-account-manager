@@ -69,7 +69,10 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 
 		// 2. Build Request
 		targetURL := c.endpoint + urlPath
-		body, _ := json.Marshal(req)
+		body, err := c.cleanAndMarshal(req)
+		if err != nil {
+			return nil, "", fmt.Errorf("marshal error: %v", err)
+		}
 		httpReq, _ := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(body))
 		httpReq.Header.Set("Content-Type", "application/json")
 		httpReq.Header.Set("Authorization", "Bearer "+token)
@@ -192,7 +195,11 @@ func (c *GeminiClient) StreamGenerateContent(ctx context.Context, model string, 
 			}
 
 			targetURL := c.endpoint + urlPath
-			body, _ := json.Marshal(req)
+			body, err := c.cleanAndMarshal(req)
+			if err != nil {
+				errCh <- fmt.Errorf("marshal error: %v", err)
+				return
+			}
 			httpReq, _ := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(body))
 			httpReq.Header.Set("Content-Type", "application/json")
 			httpReq.Header.Set("Authorization", "Bearer "+token)
@@ -282,4 +289,31 @@ func (c *GeminiClient) GenerateImage(ctx context.Context, req *mappers.ImageRequ
 	}
 
 	return nil, "", fmt.Errorf("max retries exceeded for image generation")
+}
+
+// Helper to ensure robustness (Story-71)
+func (c *GeminiClient) cleanAndMarshal(req interface{}) ([]byte, error) {
+	// 1. Marshal to bytes first
+	initialBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Unmarshal to generic map for cleaning
+	var raw interface{}
+	if err := json.Unmarshal(initialBytes, &raw); err != nil {
+		return nil, err
+	}
+
+	// 3. Apply DeepClean (Undefined removal, Type uppercasing)
+	cleaned := mappers.DeepClean(raw)
+
+	// 4. Apply Schema Sanitization (Remove prohibited fields)
+	cleaned = mappers.SanitizeSchema(cleaned)
+
+	// 4.5 Filter Web Search
+	cleaned = mappers.FilterWebSearch(cleaned)
+
+	// 5. Final Marshal
+	return json.Marshal(cleaned)
 }

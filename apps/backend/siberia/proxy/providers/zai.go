@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/proxy/mappers"
 )
 
 type ZaiProvider struct {
@@ -45,10 +46,21 @@ func (p *ZaiProvider) ForwardAnthropicJSON(w http.ResponseWriter, r *http.Reques
 	}
 	defer r.Body.Close()
 
-	var payload map[string]interface{}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	var rawPayload map[string]interface{}
+	if err := json.Unmarshal(body, &rawPayload); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+
+	// Apply Robustness Cleaning (Story-71)
+	cleaned := mappers.DeepClean(rawPayload)
+	cleaned = mappers.SanitizeSchema(cleaned) // Also sanitize schema for Z.ai/Anthropic
+	cleaned = mappers.FilterWebSearch(cleaned)
+
+	payload, ok := cleaned.(map[string]interface{})
+	if !ok {
+		// Should not happen if input was map
+		payload = rawPayload
 	}
 
 	// 2. Map Model

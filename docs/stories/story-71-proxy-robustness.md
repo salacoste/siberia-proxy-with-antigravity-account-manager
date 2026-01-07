@@ -1,7 +1,7 @@
 # Story-71: Robust Proxy Transformation
 
 **Epic:** [Epic-02: Proxy Engine](./epic-02-proxy.md)
-**Status**: Draft
+**Status**: Completed
 **Priority**: Medium
 **Basis**: `proxy/mappers/gemini/wrapper.rs` & `openai/request.rs`
 
@@ -21,4 +21,23 @@ Implement advanced request cleaning and transformation logic found in the refere
 ## Acceptance Criteria
 - [ ] Requests with `[undefined]` strings are cleaned.
 - [ ] Function calling schemas with `type: "object"` (lowercase) are converted to uppercase.
-- [ ] Image generation requests don't fail due to leftover tool definitions.
+- [x] Image generation requests don't fail due to leftover tool definitions.
+
+## Dev Agent Record
+### File List
+- `apps/backend/siberia/proxy/mappers/robustness.go` [NEW]
+- `apps/backend/siberia/proxy/mappers/robustness_test.go` [NEW]
+- `apps/backend/siberia/proxy/providers/zai.go` [MODIFY]
+- `apps/backend/siberia/proxy/upstream/gemini.go` [MODIFY]
+
+### Change Log
+1.  **Robustness Logic**: Created `mappers/robustness.go` with `DeepClean`, `SanitizeSchema`, and `FilterWebSearch`.
+2.  **Z.ai Provider**: Integrated `DeepClean` and `SanitizeSchema` into `ForwardAnthropicJSON` to fix compatibility with Z.ai/Anthropic upstreams.
+3.  **Gemini Client**: Added `cleanAndMarshal` helper to `GeminiClient` to ensure all native Gemini requests (and OpenAI-shimmed ones) are sanitized before transmission.
+4.  **Verification**: Added comprehensive unit tests in `robustness_test.go`. Verified integration with existing proxy tests.
+### QA Results
+- **Date**: 2026-01-07
+- **Evaluator**: Quinn (QA)
+- **Status**: PASS
+- **Gate Artifact**: `docs/qa/gates/epic-02.story-71-proxy-robustness.yml`
+- **Notes**: Implementation is solid. Unit coverage is excellent for the sanitization usage logic. Integration into both Z.ai and Gemini pathways ensures broad coverage.
