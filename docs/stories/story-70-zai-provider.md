@@ -1,7 +1,7 @@
 # Story-70: Z.ai Provider (Anthropic Compatible)
 
 **Epic:** [Epic-19: Z.ai Intelligence](./epic-19-zai-intelligence.md)
-**Status**: Draft
+**Status**: Completed
 **Priority**: High
 **Basis**: `proxy/providers/zai_anthropic.rs`
 

@@ -28,6 +28,9 @@ type AppConfig struct {
 	ZaiEnabled bool   `json:"zai_enabled"`
 	ZaiBaseURL string `json:"zai_base_url"`
 	ZaiApiKey  string `json:"zai_api_key"`
+	// Dispatch Mode: "off", "exclusive", "pooled", "fallback"
+	ZaiDispatchMode string            `json:"zai_dispatch_mode"`
+	ZaiModelMapping map[string]string `json:"zai_model_mapping"`
 
 	// Security
 	MitmEnabled bool   `json:"mitm_enabled"`
@@ -94,6 +97,8 @@ func NewManager() (*Manager, error) {
 			ZaiEnabled:       false,
 			ZaiBaseURL:       "https://api.z.ai/v1",
 			ZaiApiKey:        "",
+			ZaiDispatchMode:  "off",
+			ZaiModelMapping:  map[string]string{},
 			AuthEnabled:      false,
 			AuthToken:        "",
 			MasterKey:        "",

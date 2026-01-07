@@ -1,7 +1,7 @@
 # Story-63: Image Generation Handler
 
 **Epic:** [Epic-19: Z.ai Intelligence](./epic-19-zai-intelligence.md) (or Core Proxy)
-**Status**: Ready for Review
+**Status**: Completed
 **Priority**: Medium
 **Basis**: `docs/gap_analysis_deep_dive.md`
 

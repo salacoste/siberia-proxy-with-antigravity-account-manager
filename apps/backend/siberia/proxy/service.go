@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +25,7 @@ import (
 	"github.com/salacoste/siberia/siberia/proxy/handlers/gemini"
 	"github.com/salacoste/siberia/siberia/proxy/handlers/openai"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
+	"github.com/salacoste/siberia/siberia/proxy/providers"
 	"github.com/salacoste/siberia/siberia/proxy/scripting"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
 
@@ -46,8 +48,12 @@ type Service struct {
 
 	claudeHandler http.Handler
 	geminiHandler http.Handler
-	MapLocal      *middleware.MapLocalMiddleware
-	ScriptEngine  *scripting.ScriptEngine
+
+	// Providers (Story-70)
+	zaiProvider *providers.ZaiProvider
+
+	MapLocal     *middleware.MapLocalMiddleware
+	ScriptEngine *scripting.ScriptEngine
 }
 
 func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine, accSvc *accounts.Service) *Service {
@@ -74,6 +80,7 @@ func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analy
 
 		claudeHandler: clHandler,
 		geminiHandler: gmHandler,
+		zaiProvider:   providers.NewZaiProvider(cfg),
 		MapLocal:      middleware.NewMapLocalMiddleware(),
 		ScriptEngine:  scripting.NewScriptEngine(),
 	}
@@ -384,64 +391,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r = req
 	}
 
-	// 1. Check if z.ai is enabled and if request is "Reverse Proxy" style
-
-	if s.config.ZaiEnabled {
-		if r.URL.Scheme == "" || r.URL.Host == "" {
-			rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200}
-			s.handleZaiForward(rw, r)
-			return
-		}
-	}
-
-	// 1.5 WebSocket Interception
-	// This works for:
-	// - Plain HTTP (port 80) directed here
-	// - HTTPS (port 443) which was intercepted by HandleConnect -> proxy.MitmHandler -> THIS function.
-	if strings.ToLower(r.Header.Get("Upgrade")) == "websocket" && strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
-		// Log
-		// log.Printf("[WS] Intercepting WebSocket upgrade for: %s", r.URL.String())
-
-		// Generate a connID for this WS session if not present (handled by middleware usually, but here we might be outside if direct ServeHTTP?)
-		// Actually, ServeHTTP is called by MitM or direct.
-		// If MitM, we don't have the ctx.UserData from the goproxy OnRequest chain because that chain hasn't happened yet for this request/response cycle if we are the handler?
-		// WAIT.
-		// MitM: HandleConnect -> Hijack -> server -> s.ServeHTTP.
-		// So this is a BRAND NEW HTTP Request from the perspective of our server.
-		// The goproxy request chain happens inside s.proxy.ServeHTTP (line 304).
-		// So we are "upstream" of s.proxy.ServeHTTP.
-		// Means we haven't hit OnRequest yet.
-		// So we must generate the ConnID here for WebSocket Tunnels that we intercept BEFORE goproxy.
-		connID := uuid.New().String()
-
-		HandleWebSocketTunnel(w, r, s.ctx, connID)
-
-		// Also emit the "Handshake Request" Log?
-		// We should emit a log that says "Switching Protocols".
-		// HandleWebSocketTunnel handles the tunnel. It does NOT emit the handshake event itself.
-		// We should emit it manually to show up in the table.
-
-		// Actually, let's keep it simple. We emit the initial request event.
-		s.emitFullEvent(r, &http.Response{
-			StatusCode: 101,
-			Header: http.Header{
-				"Upgrade":    []string{"websocket"},
-				"Connection": []string{"Upgrade"},
-			},
-			ContentLength: 0,
-			Request:       r,
-		}, time.Now(), "", "", connID)
-
-		return
-	}
-
-	// Track Active Connection (Request Scope)
-	if s.TelemetryManager != nil && s.TelemetryManager.analytics != nil {
-		s.TelemetryManager.analytics.IncrementActive()
-		defer s.TelemetryManager.analytics.DecrementActive()
-	}
-
-	// 2. Handler Specific Routes (Story-43)
+	// 1. Handler Specific Routes (Story-43, Story-63, Story-70)
 	// OpenAI Chat Completions
 	if r.URL.Path == "/v1/chat/completions" && r.Method == "POST" {
 		s.openaiHandler.ServeHTTP(w, r)
@@ -456,7 +406,14 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Claude Messages
 	if r.URL.Path == "/v1/messages" && r.Method == "POST" {
-		s.claudeHandler.ServeHTTP(w, r)
+		// Story-70: Z.ai Dispatch Check
+		shouldUseZai, restoredReq := s.checkZaiDispatch(r)
+		if shouldUseZai {
+			s.zaiProvider.ForwardAnthropicJSON(w, restoredReq)
+			return
+		}
+		// Use restored request just in case checkZaiDispatch consumed it
+		s.claudeHandler.ServeHTTP(w, restoredReq)
 		return
 	}
 
@@ -464,6 +421,15 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(r.URL.Path, "/v1beta/models/") && strings.Contains(r.URL.Path, ":") {
 		s.geminiHandler.ServeHTTP(w, r)
 		return
+	}
+
+	// 2. Check if z.ai is enabled and if request is "Reverse Proxy" style (Catch-All for Z.ai)
+	if s.config.ZaiEnabled {
+		if r.URL.Scheme == "" || r.URL.Host == "" {
+			rw := &captureResponseWriter{ResponseWriter: w, statusCode: 200}
+			s.handleZaiForward(rw, r)
+			return
+		}
 	}
 
 	// 3. Otherwise default to standard goproxy (Forward Proxy)
@@ -619,4 +585,49 @@ func (l *singleConnListener) Close() error {
 
 func (l *singleConnListener) Addr() net.Addr {
 	return l.conn.LocalAddr()
+}
+
+func (s *Service) checkZaiDispatch(r *http.Request) (bool, *http.Request) {
+	cfg := s.config
+	if cfg.ZaiDispatchMode == "off" || cfg.ZaiDispatchMode == "" {
+		return false, r
+	}
+
+	// 1. Peek Body
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		// If error, assume standard handler can handle or fail
+		return false, r
+	}
+	r.Body.Close()
+	// Restore body immediately for the returned request
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	// 2. Parse Minimal to get Model
+	var partial struct {
+		Model string `json:"model"`
+	}
+	if err := json.Unmarshal(bodyBytes, &partial); err != nil {
+		return false, r
+	}
+
+	// 3. Logic
+	model := partial.Model
+
+	// Explicit Z.ai prefix
+	if strings.HasPrefix(model, "zai:") {
+		return true, r
+	}
+
+	// Exclusive Mode
+	if cfg.ZaiDispatchMode == "exclusive" {
+		return true, r
+	}
+
+	// Pooled/Mapped check
+	if _, ok := cfg.ZaiModelMapping[model]; ok {
+		return true, r
+	}
+
+	return false, r
 }

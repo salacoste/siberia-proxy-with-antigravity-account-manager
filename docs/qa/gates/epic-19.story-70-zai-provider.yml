@@ -1,0 +1,23 @@
+version: 1.0
+epic: epic-19-zai-intelligence
+story: story-70-zai-provider
+status: PASS
+date: 2026-01-07
+evaluated_by: Sarah (PO)
+criteria:
+  - id: dispatch-logic
+    description: "Requests to /v1/messages are correctly dispatched to Z.ai when configured"
+    status: PASS
+    notes: Verified via TestZaiAnthropicProvider
+  - id: model-mapping
+    description: "Models are correctly mapped (e.g., claude-3-opus -> metis)"
+    status: PASS
+    notes: Verified via TestZaiAnthropicProvider
+  - id: auth-injection
+    description: "Z.ai API Key is correctly injected"
+    status: PASS
+    notes: Verified Authorization header presence in mock
+  - id: fallback
+    description: "Requests fallback to default handler when Z.ai dispatch is OFF"
+    status: PASS
+    notes: Verified via TestZaiAnthropicProvider_Off
