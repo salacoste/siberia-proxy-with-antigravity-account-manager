@@ -1,0 +1,21 @@
+context:
+  story: Story-75
+  epic: Epic-19
+  status: PASS
+  date: 2026-01-07
+  agent: dev
+
+validation:
+  unit_tests:
+    - passed: true
+    - commands:
+      - "go test ./siberia/zai/..."
+      - "go test ./siberia/mcp/..."
+  manual_checks:
+    - passed: true
+    - notes: "Verified VisionClient handles inputs correctly. Tools registered in MCP."
+
+artifacts:
+  - apps/backend/siberia/zai/vision.go
+  - apps/backend/siberia/zai/tools/vision_tools.go
+  - apps/backend/siberia/mcp/registry.go
