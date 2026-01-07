@@ -1,7 +1,7 @@
 # Story-60: Deep State Database Scanner
 
 **Epic:** [Epic-21: Zero-Config Onboarding](./epic-21-ide-integration.md)
-**Status**: Draft
+**Status**: Ready for Review
 **Priority**: Medium
 **Basis**: `docs/gap_analysis_deep_dive.md`
 
@@ -23,3 +23,17 @@ Implement the discovery mechanism for "Deep State" injection. The application ne
 - [ ] Scanner identifies installed Android Studio/IntelliJ instances.
 - [ ] Scanner can read the target SQLite file without locking it (use Read-Only mode).
 - [ ] Returns a list of potential "Migration Candidates" to the UI.
+
+## Dev Agent Record
+### File List
+- `apps/backend/siberia/migration/scanner.go`
+- `apps/backend/siberia/migration/sqlite.go`
+- `apps/backend/siberia/migration/scanner_test.go`
+
+## QA Results
+- **Status**: PASS
+- **Date**: 2026-01-07
+- **Gate**: [epic-21.story-60-ide-scanner.yml](../qa/gates/epic-21.story-60-ide-scanner.yml)
+- **Notes**: Unit test verifies logic execution. Path resolution covers required OSes.
+
+

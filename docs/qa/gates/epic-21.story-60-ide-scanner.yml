@@ -1,0 +1,20 @@
+story: story-60-ide-scanner
+status: PASS
+date: 2026-01-07
+reviewer: Quinn (QA)
+test_results:
+  unit_tests:
+    - name: TestScanIDEProfiles
+      result: PASS
+      notes: Scanner executes correctly on host OS.
+  manual_checks:
+    - check: Logic Review
+      result: PASS
+      notes: Correctly targets macOS (~/Library/Application Support) and Linux (~/.config) paths. Includes Read-Only DB mode.
+risk_assessment:
+  level: LOW
+  notes: Feature is additive (Scanner). Read-Only mode prevents DB corruption.
+completion_criteria:
+  - [x] Scanner identifies installed Android Studio/IntelliJ instances
+  - [x] Scanner can read the target SQLite file without locking it (RO mode)
+  - [x] Permission handling via error checks
