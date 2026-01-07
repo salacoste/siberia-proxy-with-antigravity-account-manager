@@ -1,7 +1,7 @@
 # Story-04: Implement Theme Switching System
 
 **Epic:** [Epic-01: Core Foundation & UI Shell](./epic-01-core.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Implement a robust Theme Switching system (Light/Dark/System) that works seamlessly across the Go backend and React frontend.

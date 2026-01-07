@@ -1,7 +1,8 @@
 # Story-39: Real Cloud Backend (Supabase Sync)
 
 **Epic**: [Epic-13: Cloud Infrastructure](../epics/epic-13-cloud-infrastructure.md)
-**Status**: Completed
+**Status**: Ready for Dev
+**Feature Branch**: `antigravity/feat/cloud-backend`
 
 ## Goal
 Replace the in-memory `MockServer` in `siberia/modules/sync` with a real client that talks to Supabase.
@@ -26,11 +27,4 @@ Replace the in-memory `MockServer` in `siberia/modules/sync` with a real client 
 -   [x] "Push" persists data across app restarts (checked via Supabase Dashboard or second device).
 -   [x] "Pull" retrieves the correct encrypted blob.
 
-## QA Results (2026-01-04)
-**Agent**: Quinn (QA)
-**Decision**: **PASS** (via Gate `epic-13.story-39-real-auth.yml`)
 
-### Verification
-- **Code Audit**: Confirmed `SupabaseClient` now implements `SignUp` and `SignIn` using `nedpals/supabase-go`.
-- **UI**: Added conditional Login/Signup forms to `SyncSettings`.
-- **Security**: Push/Pull operations now check for valid `userID` before proceeding.

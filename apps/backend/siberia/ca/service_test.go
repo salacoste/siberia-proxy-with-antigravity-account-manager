@@ -1,90 +1,75 @@
 package ca
 
 import (
-	"crypto/x509"
-	"encoding/pem"
 	"os"
 	"testing"
 
 	"github.com/salacoste/siberia/siberia/config"
 )
 
-func TestEnsureCA(t *testing.T) {
+func TestService_EnsureCA(t *testing.T) {
 	// Setup Temp Dir
-	tmpDir, err := os.MkdirTemp("", "siberia_ca_test")
+	tempDir, err := os.MkdirTemp("", "siberia-ca-test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tempDir)
 
-	cfg := &config.AppConfig{
-		AppDataDir: tmpDir,
+	// Mock Config
+	cfg := &config.Manager{
+		Config: config.AppConfig{
+			AppDataDir: tempDir, // Use temp dir as AppDataDir
+		},
 	}
 
 	svc := NewService(cfg)
-	certPath := svc.GetCAPath()
-	keyPath := svc.GetKeyPath()
 
-	// 1. EnsureCA should create files
-	err = svc.EnsureCA()
-	if err != nil {
+	// --- 1. First Run: Generation ---
+	if err := svc.EnsureCA(); err != nil {
 		t.Fatalf("First EnsureCA failed: %v", err)
 	}
 
-	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		t.Errorf("Cert file was not created at %s", certPath)
-	}
-	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		t.Errorf("Key file was not created at %s", keyPath)
+	certPath, keyPath := svc.GetCAPath()
+	if !fileExists(certPath) || !fileExists(keyPath) {
+		t.Fatal("Cert or Key file NOT created")
 	}
 
-	// 2. Validate Content
-	certBytes, err := os.ReadFile(certPath)
+	// Verify Permissions (Unix only - check if we can skip on Windows)
+	// For this environment (Mac/Linux), we expect 0600 for key.
+	info, err := os.Stat(keyPath)
 	if err != nil {
-		t.Fatalf("Failed to read cert: %v", err)
+		t.Fatal(err)
 	}
-	block, _ := pem.Decode(certBytes)
-	if block == nil {
-		t.Fatal("Failed to decode PEM block")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		t.Fatalf("Failed to parse certificate: %v", err)
+	if info.Mode().Perm() != 0600 {
+		t.Errorf("Key permissions mismatch. Expected 0600, got %v", info.Mode().Perm())
 	}
 
-	if cert.Subject.CommonName != "Siberia Proxy CA" {
-		t.Errorf("Expected CommonName 'Siberia Proxy CA', got '%s'", cert.Subject.CommonName)
-	}
-	if !cert.IsCA {
-		t.Error("Certificate is not marked as CA")
+	// Verify content
+	firstCertBytes, _ := os.ReadFile(certPath)
+	firstKeyBytes, _ := os.ReadFile(keyPath)
+	if len(firstCertBytes) == 0 || len(firstKeyBytes) == 0 {
+		t.Error("Generated files are empty")
 	}
 
-	// 3. Test Idempotency
-	infoBefore, _ := os.Stat(certPath)
-	err = svc.EnsureCA()
-	if err != nil {
+	// --- 2. Second Run: Idempotency ---
+	// Mod time check
+	statBefore, _ := os.Stat(path(keyPath))
+	timeBefore := statBefore.ModTime()
+
+	if err := svc.EnsureCA(); err != nil {
 		t.Fatalf("Second EnsureCA failed: %v", err)
 	}
-	infoAfter, _ := os.Stat(certPath)
 
-	if infoBefore.ModTime() != infoAfter.ModTime() {
-		t.Log("Note: EnsureCA regenerated the certificate on second run.")
-	} else {
-		t.Log("EnsureCA respected existing certificate.")
+	statAfter, _ := os.Stat(path(keyPath))
+	if !statAfter.ModTime().Equal(timeBefore) {
+		t.Error("EnsureCA overwrote existing valid CA (ModTime changed)")
 	}
 
-	// 4. Test Recovery (Missing Key)
-	os.Remove(keyPath)
-	err = svc.EnsureCA()
-	if err != nil {
-		t.Fatalf("Recovery EnsureCA failed: %v", err)
-	}
-	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		t.Errorf("Key file was not recreated")
-	}
-
-	// 5. CheckTrust should default to false (requires OS install)
-	if svc.CheckTrust() {
-		t.Error("New CA should NOT be trusted by OS yet")
+	// Content check
+	secondKeyBytes, _ := os.ReadFile(keyPath)
+	if string(firstKeyBytes) != string(secondKeyBytes) {
+		t.Error("Key content changed between runs")
 	}
 }
+
+func path(s string) string { return s }

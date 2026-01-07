@@ -1,7 +1,7 @@
 # Story-02: Implement Settings Store & Persistence
 
 **Epic:** [Epic-01: Core Foundation & UI Shell](./epic-01-core.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Implement the backend configuration system and the frontend state store to manage application settings. This is the "brain" of the app's preferences.

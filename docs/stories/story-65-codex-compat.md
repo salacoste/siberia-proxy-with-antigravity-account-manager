@@ -1,7 +1,8 @@
 # Story-65: Legacy Codex Compatibility
 
 **Epic:** [Epic-02: Proxy Engine](./epic-02-proxy.md)
-**Status**: Draft
+**Status**: Ready for Dev
+**Feature Branch**: `antigravity/feat/codex-compat`
 **Priority**: Low
 **Basis**: `docs/gap_analysis_deep_dive.md`
 

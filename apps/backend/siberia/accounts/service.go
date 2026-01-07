@@ -96,6 +96,14 @@ func (s *Service) DeleteAccount(id uint) error {
 	return s.db.Delete(&db.Account{}, id).Error
 }
 
+func (s *Service) GetAccount(id uint) (*db.Account, error) {
+	var acc db.Account
+	if err := s.db.First(&acc, id).Error; err != nil {
+		return nil, err
+	}
+	return &acc, nil
+}
+
 // AccountDTO is safe for frontend consumption (no passwords/tokens)
 type AccountDTO struct {
 	ID        uint      `json:"id"`

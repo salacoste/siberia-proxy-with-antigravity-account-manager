@@ -1,0 +1,36 @@
+schema: 1
+story: 'epic-21.story-64'
+story_title: 'IDE State Injector (Write)'
+gate: PASS
+status_reason: 'High-risk feature mitigated by robust backup strategy and graceful process termination.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-07T13:55:00+03:00'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 95
+expires: '2026-01-21T13:55:00+03:00'
+
+evidence:
+  tests_reviewed: 0 # Manual verification heavy
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3] # Tasks map to ACs
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Access tokens injected locally.'
+  reliability:
+    status: PASS
+    notes: 'Backup (.bak) created before write.'
+  maintainability:
+    status: CONCERNS
+    notes: 'Relies on VS Code internal Protobuf schema (Field 6). Risk of breakage on VS Code updates.'
+
+recommendations:
+  future:
+    - action: 'Monitor VS Code schema changes'
+      refs: ['apps/backend/siberia/modules/injection/protobuf.go']

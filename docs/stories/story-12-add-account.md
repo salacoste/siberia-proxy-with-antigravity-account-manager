@@ -1,7 +1,7 @@
 # Story-12: Implement Add Account Logic (OAuth Loopback)
 
 **Epic:** [Epic-03: Accounts Manager](./epic-03-accounts.md)
-**Status:** Draft
+**Status:** Completed
 **Feature Branch:** `antigravity/feat/add-account-logic`
 
 ## Goal

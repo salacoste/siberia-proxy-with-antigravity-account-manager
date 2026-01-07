@@ -1,7 +1,7 @@
 # Story-03: Create Global Layout (Navbar, Routing)
 
 **Epic:** [Epic-01: Core Foundation & UI Shell](./epic-01-core.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Establish the core UI shell of the application, including the permanent Navigation Bar, Client-Side Routing, and the root layout structure that holds the application together.

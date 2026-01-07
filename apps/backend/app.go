@@ -71,7 +71,7 @@ func NewApp(cfg *config.Manager) *App {
 	logger.InitAccessLogger(cfg.ConfigDir())
 
 	// Initialize CA Service
-	caSvc := ca.NewService(&cfg.Config)
+	caSvc := ca.NewService(cfg)
 	if err := caSvc.EnsureCA(); err != nil {
 		log.Printf("Fatal: Failed to ensure CA: %v\n", err)
 	}
@@ -253,6 +253,37 @@ func (a *App) CreateAccount(email, password, recovery, proxyGroup string) error 
 // ActivateAccount Orchestrates the switch to this account
 func (a *App) ActivateAccount(id uint) error {
 	return a.accountService.ActivateAccount(id)
+}
+
+// SwitchAccount performs the "Push to IDE" workflow (Story-64)
+func (a *App) SwitchAccount(accountID uint) error {
+	// 1. Activate Account (Handles Kill + Inject)
+	// This calls AccountService.ActivateAccount -> performActivation
+	if err := a.accountService.ActivateAccount(accountID); err != nil {
+		return fmt.Errorf("activation failed: %w", err)
+	}
+
+	// 2. Restart IDE
+	// We need to know which IDE to start. Config has it.
+	targetIDE := a.config.Get().TargetIDE
+	if targetIDE == "" {
+		targetIDE = "Cursor" // Default
+	}
+
+	// Map generic ID to likely app name for "open -a"
+	// e.g. "vscode" -> "Visual Studio Code"
+	appName := targetIDE
+	if targetIDE == "vscode" {
+		appName = "Visual Studio Code"
+	} else if targetIDE == "cursor" {
+		appName = "Cursor"
+	}
+
+	if err := a.processService.Start(appName); err != nil {
+		return fmt.Errorf("failed to restart IDE: %w", err)
+	}
+
+	return nil
 }
 
 // startup is called when the app starts. The context is saved

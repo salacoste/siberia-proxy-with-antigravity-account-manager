@@ -18,7 +18,8 @@ type AppConfig struct {
 	DbSync           bool   `json:"db_sync"`
 	ProxyPort        int    `json:"proxy_port"`
 	UpstreamProxy    string `json:"upstream_proxy"`
-	TargetIDE        string `json:"target_ide"` // "vscode", "cursor", "windsurf"
+	TargetIDE        string `json:"target_ide"`      // "vscode", "cursor", "windsurf"
+	LegacyIDEPath    string `json:"legacy_ide_path"` // Path to state.vscdb
 	WindowWidth      int    `json:"window_width"`
 	WindowHeight     int    `json:"window_height"`
 	MaxLogHistory    int    `json:"max_log_history"` // Default 5000

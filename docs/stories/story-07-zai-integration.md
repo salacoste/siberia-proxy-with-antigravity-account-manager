@@ -1,7 +1,7 @@
 # Story-07: Implement z.ai Provider Integration
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Integrate "z.ai" as a fallback or alternative provider. The proxy should be able to route requests to z.ai's API instead of the direct target (Google) based on configuration or routing rules.

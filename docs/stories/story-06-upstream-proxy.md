@@ -1,7 +1,7 @@
 # Story-06: Implement Upstream Proxy Chaining
 
 **Epic:** [Epic-02: Siberia Proxy Core](./epic-02-proxy.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Enable the local Siberia proxy to forward all outgoing traffic to a specified **Upstream Proxy** (e.g., a residential proxy provider or Tor), effectively chaining them: `Client -> Siberia -> Upstream -> Target`.

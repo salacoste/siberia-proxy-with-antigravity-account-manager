@@ -1,8 +1,41 @@
 schema: 1
-story: 'Epic-08.Story-25'
+story: 'epic-08.story-25'
+story_title: 'Certificate Authority Management (Backend)'
 gate: PASS
-status_reason: 'CA management logic correctly generates secure keys and is verified by unit tests.'
-reviewer: 'Quinn'
-updated: '2026-01-05T05:33:00+03:00'
+status_reason: 'Implementation meets all security and functional requirements. Tests verify 0600 permissions and idempotency.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-07T13:50:00+03:00'
+
 top_issues: []
 waiver: { active: false }
+
+quality_score: 100
+expires: '2026-01-21T13:50:00+03:00'
+
+evidence:
+  tests_reviewed: 2
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Private key file permissions (0600) enforced. Key generation uses RSA 2048.'
+  performance:
+    status: PASS
+    notes: 'Key generation only happens on first run.'
+  reliability:
+    status: PASS
+    notes: 'Idempotency checks prevent accidental overwrite.'
+  maintainability:
+    status: PASS
+    notes: 'Clean module separation.'
+
+recommendations:
+  future:
+    - action: 'Implement P256 support'
+      refs: ['apps/backend/siberia/ca/cert.go']
+    - action: 'Add Windows/Linux trust store installation'
+      refs: ['apps/backend/siberia/ca/install_stub.go']

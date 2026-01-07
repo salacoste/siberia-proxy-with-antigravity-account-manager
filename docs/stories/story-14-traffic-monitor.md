@@ -1,7 +1,7 @@
 # Story-14: Implement Proxy Traffic Monitor
 
 **Epic:** [Epic-04: Proxy Monitor](./epic-04-monitor.md)
-**Status:** Draft
+**Status:** Completed
 **Feature Branch:** `antigravity/feat/traffic-monitor`
 
 ## Goal

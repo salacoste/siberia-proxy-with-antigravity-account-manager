@@ -27,7 +27,8 @@ func TestMitmLogic(t *testing.T) {
 	// 2. Setup CA Service (Generate CA)
 	// We manually generate a CA here to avoid dependency on ca.Service logic quirks,
 	// or we just use ca.Service if it's reliable. Let's use ca.Service.
-	caSvc := ca.NewService(cfg)
+	manager := &config.Manager{Config: *cfg}
+	caSvc := ca.NewService(manager)
 	if err := caSvc.EnsureCA(); err != nil {
 		t.Fatalf("Failed to ensure CA: %v", err)
 	}

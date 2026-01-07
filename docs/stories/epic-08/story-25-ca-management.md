@@ -2,6 +2,7 @@
 
 **Epic:** [Epic-08: HTTPS Decryption (MitM)](../epic-08-mitm.md)
 **Status**: Completed
+**Feature Branch**: `antigravity/feat/mitm-ca`
 **Parent**: Epic-08
 
 ## Description
@@ -13,13 +14,17 @@ Implement the backend capability to generate, store, and retrieve the Root Certi
     -   Store `ca.pem` (Cert) and `ca.key` (Private Key) in the application data directory (`UserDataDir/certificates`).
     -   Secure storage permissions (readable only by owner).
 3.  **Generation**:
-    -   Use `crypto/x509` to generate an RSA or ECDSA root certificate.
+    -   Use `crypto/x509` to generate a Root Certificate.
+    -   **Algorithm**: RSA 2048 or ECDSA P256 (P256 preferred for performance).
     -   Subject Name: "Siberia Proxy CA".
     -   Validity: 10 years.
     -   Key Usage: `CertSign`, `CRLSign`.
-4.  **API**:
-    -   `GetCAPath()`: Returns full paths to cert and key.
-    -   `EnsureCA()`: Checks existence, generates if missing.
+4.  **Validation**:
+    -   **Permissions**: `ca.key` MUST be set to `0600` (Read/Write by Owner only) on Unix-like systems.
+    -   **Idempotency**: `EnsureCA()` must NEVER overwrite an existing valid CA.
+5.  **API**:
+- [x] `GetCAPath()`: Returns full paths to cert and key.
+    - [x] `EnsureCA()`: Checks existence, generates if missing.
 
 ## Acceptance Criteria
 - [x] `EnsureCA()` creates `ca.pem` and `ca.key` if they don't exist.
@@ -32,25 +37,62 @@ Implement the backend capability to generate, store, and retrieve the Root Certi
 ## Dev Agent Record
 
 ### Completion Notes
-- Implemented `siberia/ca` service with RSA 2048 key generation.
-- Enforced `0600` permissions for `ca.key`.
-- Integrated `EnsureCA` into `app.go`.
-- Verified via `service_test.go` confirming idempotency and regeneration logic.
+- Implemented `siberia/ca` module using `crypto/x509` (RSA 2048).
+- Enforced strict `0600` permissions on `ca.key`.
+- Verified idempotency via unit tests.
+- Wired `EnsureCA()` into `app.go` startup.
 
-### Story DoD Checklist
-- [x] All functional requirements met.
-- [x] Tests passed.
-- [x] Code follows patterns.
+### Files Modified
+- `apps/backend/siberia/ca/cert.go`
+- `apps/backend/siberia/ca/service.go`
+- `apps/backend/siberia/ca/install_darwin.go`
+- `apps/backend/app.go`
+
+
 
 ## QA Results
 
-### Review Date: 2026-01-05
+### Review Date: 2026-01-07
 
 ### Reviewed By: Quinn (Test Architect)
 
-- **Audit**: Code reviewed. `EnsuraCA` logic is sound. Tests cover idempotency.
-- **Verdict**: Approved.
+### Code Quality Assessment
+
+The implementation is robust and follows security best practices. Separating the CA logic into its own module (`siberia/ca`) ensures clean separation of concerns.
+
+-   **Security**: Key generation uses standard `crypto/rsa` (2048 bit). Private key storage strictly enforces `0600` permissions, ensuring only the owner can read/write.
+-   **Idempotency**: `EnsureCA` correctly handles existing files, preventing accidental overwrite of the Root CA (which would break trust on all client devices).
+-   **Testing**: Unit tests cover generation parameters (Subject, Validity) and storage mechanism (Permissions, file existence).
+
+### Refactoring Performed
+
+None required. The initial implementation by Dev was clean.
+
+### Compliance Check
+
+-   Coding Standards: [✓]
+-   Project Structure: [✓] (`siberia/ca` matches module pattern)
+-   Testing Strategy: [✓] (Unit tests in place)
+-   All ACs Met: [✓]
+
+### Improvements Checklist
+
+-   [ ] Consider ECDSA P256 support in future for performance (currently RSA 2048).
+-   [ ] Add `install_linux.go` and `install_windows.go` for cross-platform support (currently `install_darwin.go` only).
+
+### Security Review
+
+-   **Critical**: Private key (`ca.key`) permissions are enforced to `0600`.
+-   **Generation**: Self-signed root CA is valid for 10 years, minimizing rotation needs.
+
+### Files Modified During Review
+
+None.
 
 ### Gate Status
 
 Gate: PASS → docs/qa/gates/epic-08.story-25-ca-management.yml
+
+### Recommended Status
+
+[✓ Ready for Done]

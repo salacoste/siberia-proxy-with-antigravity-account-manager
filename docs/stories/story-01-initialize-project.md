@@ -1,7 +1,7 @@
 # Story-01: Initialize Project Structure
 
 **Epic:** [Epic-01: Core Foundation & UI Shell](./epic-01-core.md)
-**Status:** Draft
+**Status:** Completed
 
 ## Goal
 Initialize the repository with the correct project structure for a Go + Wails + React + Vite application.

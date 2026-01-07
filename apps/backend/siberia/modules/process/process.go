@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
 )
@@ -40,14 +41,35 @@ func (m *Service) Kill(name string) error {
 			continue // Skip processes we can't read
 		}
 
-		// Simple case-insensitive containment check
-		// e.g., "Code Helper" matches "Code Helper (GPU)"
+		// Case-insensitive containment check
 		if strings.Contains(strings.ToLower(pName), strings.ToLower(name)) {
-			fmt.Printf("[Process] Killing PID %d: %s\n", p.Pid, pName)
+			fmt.Printf("[Process] Found PID %d: %s. Initiating graceful termination...\n", p.Pid, pName)
+
+			// 1. Terminate (SIGTERM)
 			if err := p.Terminate(); err != nil {
-				// Try Kill (Force) if Terminate fails
-				_ = p.Kill()
+				// If Terminate fails, it might be already dead or permission error.
+				// We proceed to check if it's running.
 			}
+
+			// 2. Wait up to 5s
+			timeout := time.After(5 * time.Second)
+			ticker := time.NewTicker(500 * time.Millisecond)
+			terminated := false
+
+			for !terminated {
+				select {
+				case <-timeout:
+					fmt.Printf("[Process] PID %d timed out. Force Killing (SIGKILL).\n", p.Pid)
+					_ = p.Kill()
+					terminated = true
+				case <-ticker.C:
+					running, err := p.IsRunning()
+					if err != nil || !running {
+						terminated = true
+					}
+				}
+			}
+			ticker.Stop()
 			killedCount++
 		}
 	}
@@ -65,8 +87,16 @@ func (m *Service) Start(path string) error {
 		return nil
 	}
 
-	// Start detached process
-	cmd := exec.Command(path)
+	var cmd *exec.Cmd
+	// Simple heuristic for macOS App Bundles or Application Names
+	if strings.HasSuffix(path, ".app") || !strings.Contains(path, "/") {
+		// e.g. "Cursor.app" or "Cursor"
+		cmd = exec.Command("open", "-a", path)
+	} else {
+		// Direct binary path
+		cmd = exec.Command(path)
+	}
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start process %s: %w", path, err)
 	}

@@ -10,7 +10,7 @@ import (
 
 // InstallCert installs the root CA into the macOS Keychain
 func (s *Service) InstallCert() error {
-	certPath := s.GetCAPath()
+	certPath, _ := s.GetCAPath()
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
 		return fmt.Errorf("CA certificate not found at %s", certPath)
 	}
@@ -39,7 +39,7 @@ func (s *Service) InstallCert() error {
 
 // CheckTrust checks if the cert is trusted using 'security verify-cert'
 func (s *Service) CheckTrust() bool {
-	certPath := s.GetCAPath()
+	certPath, _ := s.GetCAPath()
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
 		return false
 	}

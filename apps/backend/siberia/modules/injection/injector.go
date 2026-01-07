@@ -80,10 +80,18 @@ func (i *Service) Inject(dbPath string, accessToken, refreshToken string, expiry
 		return fmt.Errorf("failed to modify protobuf: %w", err)
 	}
 
-	// D. Write back
+	// D. Write back Token
 	_, err = db.Exec(updateSQL, targetKey, newBlob)
 	if err != nil {
 		return fmt.Errorf("failed to inject token: %w", err)
+	}
+
+	// E. Set Onboarding Marker
+	// This helps the extension or debuggers know Antigravity modified the state
+	_, err = db.Exec(updateSQL, "antigravity.onboarding", "true")
+	if err != nil {
+		fmt.Printf("[Injector] Warning: Failed to set onboarding marker: %v\n", err)
+		// Non-critical
 	}
 
 	fmt.Printf("[Injector] Successfully injected token for key: %s (Size: %d -> %d)\n", targetKey, len(existingBlob), len(newBlob))
