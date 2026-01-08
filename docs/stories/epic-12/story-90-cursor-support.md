@@ -1,4 +1,4 @@
-# Story-37: Add Support for Cursor and Windsurf IDEs
+# Story-90: Add Support for Cursor and Windsurf IDEs
 
 **Epic:** [Epic-12: Native Integrations beyond VS Code](./epic-12-native-integrations.md)
 **Status:** Completed

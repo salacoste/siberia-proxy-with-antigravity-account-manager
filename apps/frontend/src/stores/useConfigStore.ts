@@ -72,7 +72,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         const current = get().config;
         if (!current) return;
 
-        const newConfig = { ...current, theme };
+        const newConfig = new config.AppConfig({ ...current, theme });
         await get().updateConfig(newConfig);
     },
 }));

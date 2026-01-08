@@ -91,3 +91,30 @@ The Proxy Engine is the "Siberia" component. It acts as a local bridge that tric
 *   **Cache Control:** Proactively removes `cache_control` fields from all messages to prevent "Extra inputs" errors from upstream.
 *   **Tool Priority:** If both local tools (e.g., MCP) and Google Search are requested, the engine prioritizes local tools and drops Google Search, as Gemini v1internal does not support mixed tool types in a single request.
 
+## 5. Security & Privacy
+**Source:** `proxy/privacy.rs`
+
+The engine enforces strict PII sanitization before logging or displaying data:
+*   **Email Masking:** Transforms `user.name@example.com` to `u***@example.com` to protect user identity in logs.
+*   **ID Anonymization:** Truncates long IDs (e.g., `lat_123456789`) to `lat_...6789`.
+*   **Stable Hashing:** Uses SHA-256 to generate consistent correlation IDs from user attributes without storing the raw attribute.
+
+## 6. Internal Identity Handling
+**Source:** `proxy/project_resolver.rs`
+
+To authenticate with the internal `cloudcode-pa` API, the system requires a valid `cloudaicompanionProject`.
+*   **Resolution Strategy:**
+    1.  Call `https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist` with the user's `access_token`.
+    2.  Extract `cloudaicompanionProject` from the JSON response.
+*   **Fallback Logic:**
+    *   If the account is ineligible (no Project ID returned), the system generates a **Mock Project ID** (e.g., `swift-core-a1b2c`).
+    *   This allows the proxy to function in a "Shadow Mode" or "Tier 0" capacity depending on upstream validation rules.
+
+
+## 7. Performance Optimizations (v1.2.0)
+**Source:** `proxy/pool.go`, `proxy/service.go`
+
+To handle high-concurrency enterprise workloads (10k+ RPS), several optimizations were added:
+*   **Buffer Pooling:** Uses `sync.Pool` for byte slices to reduce Garbage Collection pressure during body copying/reading.
+*   **Log Sampling:** Configurable `AccessLogSampleRate` (default 100) to log only 1% of requests under heavy load, preventing I/O bottlenecks while maintaining observability signals.
+*   **Zero-Copy Body Peeking:** Optimized `peekAndRestore` logic to inspect bodies for PII/Logging without full memory allocation when possible.

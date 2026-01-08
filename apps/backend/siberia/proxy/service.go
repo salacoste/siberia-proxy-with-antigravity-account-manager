@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/elazarl/goproxy"
@@ -54,13 +55,14 @@ type Service struct {
 	// Providers (Story-70)
 	zaiProvider *providers.ZaiProvider
 
-	MapLocal     *middleware.MapLocalMiddleware
-	ScriptEngine *scripting.ScriptEngine
+	MapLocal      *middleware.MapLocalMiddleware
+	ScriptEngine  *scripting.ScriptEngine
+	sampleCounter uint64
 }
 
 func NewService(cfg *config.AppConfig, caSvc *ca.Service, analyticsEngine *analytics.AnalyticsEngine, accSvc *accounts.Service) *Service {
 	proxy := goproxy.NewProxyHttpServer()
-	proxy.Verbose = true
+	proxy.Verbose = false
 
 	// Initialize Upstream Client
 	geminiClient := upstream.NewGeminiClient(accSvc)
@@ -176,16 +178,31 @@ func (s *Service) registerHandlers() {
 			"connID": connID,
 		}
 
+		// Sampling Logic
+		shouldLog := true
+		if s.config.AccessLogSampleRate > 1 {
+			c := atomic.AddUint64(&s.sampleCounter, 1)
+			if c%uint64(s.config.AccessLogSampleRate) != 0 {
+				shouldLog = false
+			}
+		}
+		if data, ok := ctx.UserData.(map[string]interface{}); ok {
+			data["shouldLog"] = shouldLog
+		}
+
 		// Capture Request Body if enabled or if Breakpoint logic needs it
 		var reqBody string
-		if r.Body != nil {
-			bodyBytes, _ := io.ReadAll(r.Body)
-			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-			reqBody = string(bodyBytes)
+		// Optimization: Skip body read if not logging AND no breakpoints
+		needsInspection := (s.CaptureBody && shouldLog) || s.BreakpointManager.HasActiveBreakpoints() || (s.ScriptEngine != nil && s.ScriptEngine.Active)
 
-			// Store useful truncated version for logs
+		if r.Body != nil && needsInspection {
+			var err error
+			reqBody, err = s.peekAndRestoreBody(r)
+			if err != nil {
+				log.Printf("[Proxy] Error capturing req body: %v", err)
+			}
 			if data, ok := ctx.UserData.(map[string]interface{}); ok {
-				data["reqBody"] = string(truncate(bodyBytes, 4096))
+				data["reqBody"] = reqBody
 			}
 		}
 
@@ -255,11 +272,23 @@ func (s *Service) registerHandlers() {
 			start = time.Now() // Fallback
 		}
 
+		shouldLog := true
+		if data, ok := ctx.UserData.(map[string]interface{}); ok {
+			if v, ok := data["shouldLog"].(bool); ok {
+				shouldLog = v
+			}
+		}
+
+		// Optimization: Skip body read if not logging AND no scripting
+		needsInspection := (s.CaptureBody && shouldLog) || (s.ScriptEngine != nil && s.ScriptEngine.Active)
+
 		respBody := ""
-		if s.CaptureBody && resp != nil && resp.Body != nil {
-			bodyBytes, _ := io.ReadAll(resp.Body)
-			resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-			respBody = string(truncate(bodyBytes, 4096))
+		if resp != nil && resp.Body != nil && needsInspection {
+			var err error
+			respBody, err = s.peekAndRestoreResponse(resp)
+			if err != nil {
+				log.Printf("[Proxy] Error capturing resp body: %v", err)
+			}
 		}
 
 		// === Scripting Logic (OnResponse) ===
@@ -282,7 +311,9 @@ func (s *Service) registerHandlers() {
 					connID = id
 				}
 			}
-			s.emitFullEvent(resp.Request, resp, start, reqBody, respBody, connID)
+			if shouldLog {
+				s.emitFullEvent(resp.Request, resp, start, reqBody, respBody, connID)
+			}
 		}
 		return resp
 	})
@@ -511,6 +542,73 @@ func (s *Service) handleZaiForward(w http.ResponseWriter, r *http.Request) {
 
 	// Manually emit event since we bypassed goproxy
 	s.emitFullEvent(r, resp, time.Now(), "[Z.AI Forward]", string(truncate(bodyBytes, 4096)), "zai-forward")
+}
+
+func (s *Service) peekAndRestoreBody(r *http.Request) (string, error) {
+	if r.Body == nil {
+		return "", nil
+	}
+
+	const limit = 4096
+	bufPtr := GetBuffer()
+	buf := *bufPtr
+	defer PutBuffer(bufPtr)
+
+	readBuf := buf
+	if len(readBuf) > limit {
+		readBuf = readBuf[:limit]
+	}
+
+	n, err := io.ReadFull(r.Body, readBuf)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		return "", err
+	}
+
+	chunk := make([]byte, n)
+	copy(chunk, buf[:n])
+
+	r.Body = &readCloserWrapper{
+		Reader: io.MultiReader(bytes.NewReader(chunk), r.Body),
+		Closer: r.Body,
+	}
+
+	return string(chunk), nil
+}
+
+func (s *Service) peekAndRestoreResponse(resp *http.Response) (string, error) {
+	if resp.Body == nil {
+		return "", nil
+	}
+
+	const limit = 4096
+	bufPtr := GetBuffer()
+	buf := *bufPtr
+	defer PutBuffer(bufPtr)
+
+	readBuf := buf
+	if len(readBuf) > limit {
+		readBuf = readBuf[:limit]
+	}
+
+	n, err := io.ReadFull(resp.Body, readBuf)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		return "", err
+	}
+
+	chunk := make([]byte, n)
+	copy(chunk, buf[:n])
+
+	resp.Body = &readCloserWrapper{
+		Reader: io.MultiReader(bytes.NewReader(chunk), resp.Body),
+		Closer: resp.Body,
+	}
+
+	return string(chunk), nil
+}
+
+type readCloserWrapper struct {
+	io.Reader
+	io.Closer
 }
 
 func (s *Service) Start(ctx context.Context) error {

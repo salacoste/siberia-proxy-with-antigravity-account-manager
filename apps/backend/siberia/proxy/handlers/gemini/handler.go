@@ -105,13 +105,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 5. Encode Response
-	maskedIdentity := "unknown"
-	if len(identity) > 3 {
-		maskedIdentity = identity[:3] + "***"
-	} else if identity != "" {
-		maskedIdentity = "***"
-	}
-	middleware.SetAttribution(w, "google", model, maskedIdentity)
+	middleware.SetAttribution(w, "google", model, identity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(gResp)
 }

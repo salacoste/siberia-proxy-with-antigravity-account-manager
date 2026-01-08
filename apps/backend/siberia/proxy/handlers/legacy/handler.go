@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/mappers/openai"
 	"github.com/salacoste/siberia/siberia/proxy/middleware"
 	"github.com/salacoste/siberia/siberia/proxy/upstream"
@@ -19,6 +20,7 @@ type LegacyCompletionRequest struct {
 	MaxTokens    int      `json:"max_tokens,omitempty"`
 	Temperature  float64  `json:"temperature,omitempty"`
 	Stop         []string `json:"stop,omitempty"`
+	Stream       bool     `json:"stream,omitempty"`
 }
 
 // LegacyCompletionResponse represents the OpenAI v1/completions response
@@ -98,8 +100,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		targetModel = "models/gemini-1.5-flash-latest" // GPT-3.5 equivalent
 	}
 
-	// 5. Call Upstream
-	// Note: We only support unary for now as per story scope implies text completion
+	// 5. Streaming Branch
+	if legReq.Stream {
+		h.handleStream(w, r, targetModel, geminiReq, legReq.Model)
+		return
+	}
+
+	// 6. Unary Call
 	gResp, identity, err := h.UpstreamClient.GenerateContent(r.Context(), targetModel, geminiReq)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Upstream Error: %v", err), http.StatusBadGateway)
@@ -150,13 +157,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 8. Send Response
-	maskedIdentity := "unknown"
-	if len(identity) > 3 {
-		maskedIdentity = identity[:3] + "***"
-	} else if identity != "" {
-		maskedIdentity = "***"
-	}
-	middleware.SetAttribution(w, "openai-legacy-shim", targetModel, maskedIdentity)
+	middleware.SetAttribution(w, "openai-legacy-shim", targetModel, identity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(legacyResp)
 }
@@ -166,4 +167,85 @@ func safeDeref(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, targetModel string, geminiReq *mappers.GeminiRequest, originalModel string) {
+	middleware.SetAttribution(w, "openai-legacy-shim", targetModel, "unknown-stream") // We don't have identity yet
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	// 1. Call Upstream
+	ch, errCh := h.UpstreamClient.StreamGenerateContent(r.Context(), targetModel, geminiReq)
+
+	for {
+		select {
+		case chunk, ok := <-ch:
+			if !ok {
+				// Done
+				fmt.Fprintf(w, "data: [DONE]\n\n")
+				flusher.Flush()
+				return
+			}
+
+			// 2. Map Chunk to Chat Response
+			chatResp, err := openai.MapResponse(chunk, originalModel)
+			if err != nil || len(chatResp.Choices) == 0 {
+				continue
+			}
+
+			// 3. Map to Legacy Chunk
+			// Codex legacy streams often just send text deltas in choices[0].text
+			content := ""
+			if chatResp.Choices[0].Delta != nil { // OpenAI Chat Stream uses Delta
+				if strContent, ok := chatResp.Choices[0].Delta.Content.(string); ok {
+					content = strContent
+				} else if _, ok := chatResp.Choices[0].Delta.Content.([]interface{}); ok {
+					// Handle array if needed, but for legacy text completion usually it's string
+					// Just simple string fallback for now
+					content = fmt.Sprintf("%v", chatResp.Choices[0].Delta.Content)
+				} else if chatResp.Choices[0].Delta.Content != nil {
+					content = fmt.Sprintf("%v", chatResp.Choices[0].Delta.Content)
+				}
+			} else if chatResp.Choices[0].Message.Content != nil { // Unary mapper might return Message
+				content = fmt.Sprintf("%v", chatResp.Choices[0].Message.Content)
+			}
+
+			legacyResp := LegacyCompletionResponse{
+				ID:      chatResp.ID,
+				Object:  "text_completion", // Stream chunk object
+				Created: chatResp.Created,
+				Model:   chatResp.Model,
+				Choices: []Choice{
+					{
+						Text:         content,
+						Index:        0,
+						LogProbs:     nil,
+						FinishReason: safeDeref(chatResp.Choices[0].FinishReason),
+					},
+				},
+			}
+
+			// 4. Send SSE
+			data, _ := json.Marshal(legacyResp)
+			fmt.Fprintf(w, "data: %s\n\n", data)
+			flusher.Flush()
+
+		case err := <-errCh:
+			if err != nil {
+				// Log error, maybe send error chunk if protocol supports it
+				fmt.Printf("[LegacyStream] Error: %v\n", err)
+			}
+			return
+
+		case <-r.Context().Done():
+			return
+		}
+	}
 }

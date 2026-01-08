@@ -92,13 +92,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maskedIdentity := "unknown"
-	if len(identity) > 3 {
-		maskedIdentity = identity[:3] + "***"
-	} else if identity != "" {
-		maskedIdentity = "***"
-	}
-	middleware.SetAttribution(w, "anthropic-shim", targetModel, maskedIdentity)
+	middleware.SetAttribution(w, "anthropic-shim", targetModel, identity)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(cResp)
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/salacoste/siberia/siberia/config"
+	"github.com/salacoste/siberia/siberia/proxy/identity"
 	"github.com/salacoste/siberia/siberia/proxy/mappers"
 	"github.com/salacoste/siberia/siberia/proxy/ratelimit"
 	"github.com/salacoste/siberia/siberia/proxy/session"
@@ -32,6 +33,7 @@ type AccountProvider interface {
 type GeminiClient struct {
 	client      *http.Client
 	accounts    AccountProvider
+	resolver    *identity.Resolver
 	endpoint    string
 	primaryURL  string
 	fallbackURL string
@@ -51,6 +53,7 @@ func NewGeminiClient(accProvider AccountProvider) *GeminiClient {
 	return &GeminiClient{
 		client:      hc,
 		accounts:    accProvider,
+		resolver:    identity.NewResolver(),
 		endpoint:    EndpointPrimary,
 		primaryURL:  EndpointPrimary,
 		fallbackURL: EndpointFallback,
@@ -75,7 +78,7 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 			fingerprint = session.GenerateFingerprint(model, content)
 		}
 
-		token, identity, err := c.accounts.GetRotatingToken(fingerprint)
+		token, accIdentity, err := c.accounts.GetRotatingToken(fingerprint)
 		if err != nil {
 			return nil, "", fmt.Errorf("auth error: %v", err)
 		}
@@ -89,6 +92,14 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 		httpReq, _ := http.NewRequestWithContext(ctx, "POST", targetURL, bytes.NewBuffer(body))
 		httpReq.Header.Set("Content-Type", "application/json")
 		httpReq.Header.Set("Authorization", "Bearer "+token)
+
+		// Inject Project ID
+		// Note: In a real implementation this should be cached. For now strict fetch or mock.
+		pid, err := c.resolver.FetchProjectID(token)
+		if err != nil {
+			pid = identity.GenerateMockProjectID()
+		}
+		httpReq.Header.Set("x-goog-user-project", pid)
 
 		// 3. Execute
 		resp, err := c.client.Do(httpReq)
@@ -108,7 +119,7 @@ func (c *GeminiClient) GenerateContent(ctx context.Context, model string, req *m
 			if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil {
 				return nil, "", fmt.Errorf("decode error: %v", err)
 			}
-			return &gResp, identity, nil
+			return &gResp, accIdentity, nil
 		}
 
 		// Retry Logic
@@ -285,7 +296,7 @@ func (c *GeminiClient) GenerateImage(ctx context.Context, req *mappers.ImageRequ
 		// Image Gen is expensive/rare, we can use random (empty fingerprint) or try to hash prompt
 		// For now, random is fine as sticking to same account isn't as critical for image gen context?
 		// Actually, Image Gen is stateless usually.
-		token, identity, err := c.accounts.GetRotatingToken("")
+		token, accIdentity, err := c.accounts.GetRotatingToken("")
 		if err != nil {
 			return nil, "", fmt.Errorf("auth error: %v", err)
 		}
@@ -315,7 +326,7 @@ func (c *GeminiClient) GenerateImage(ctx context.Context, req *mappers.ImageRequ
 			return nil, "", err
 		}
 
-		return resp, identity, nil
+		return resp, accIdentity, nil
 	}
 
 	return nil, "", fmt.Errorf("max retries exceeded for image generation")

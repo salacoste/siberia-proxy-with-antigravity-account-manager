@@ -8,5 +8,5 @@
 *   **Memory Management:** Virtualized rendering for frontend lists and efficient log rotation/truncation in backend.
 
 ## Stories
-*   [ ] **Story-35:** Optimize Backend for High Concurrency
-*   [x] **Story-36:** Implement Virtualized Traffic List & Memory Safeguards
+*   [ ] **Story-80:** Optimize Backend for High Concurrency
+*   [ ] **Story-81:** Implement Virtualized Traffic List & Memory Safeguards

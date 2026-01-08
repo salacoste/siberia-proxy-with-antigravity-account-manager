@@ -112,6 +112,18 @@ func (bm *BreakpointManager) ShouldPause(req *http.Request) bool {
 	return false
 }
 
+// HasActiveBreakpoints checks if there are any enabled rules
+func (bm *BreakpointManager) HasActiveBreakpoints() bool {
+	bm.mu.RLock()
+	defer bm.mu.RUnlock()
+	for _, rule := range bm.Rules {
+		if rule.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
 // GetRules returns a copy of current rules safely
 func (bm *BreakpointManager) GetRules() []BreakpointRule {
 	bm.mu.RLock()

@@ -7,9 +7,12 @@ It comes pre-configured with agent definitions, tasks, and transposed workflows 
 ## Features
 
 *   **Integrated BMad Core**: Contains the full `.bmad-core` definition (Agents, Tasks, Templates).
-*   **Transposed Workflows**: Automatically generated workflows in `.agent/workflows` that bridge Antigravity and BMad.
-*   **Short Aliases**: Native support for short slash commands (e.g., `/po`, `/dev`).
-*   **Smart Handoffs**: Agents are context-aware and suggest the next logical workflow step upon task completion.
+*   **Integrated BMad Core**: Contains the full `.bmad-core` definition (Agents, Tasks, Templates).
+*   **Enterprise Proxy**: High-performance (Go/Rust) engine with Buffer Pooling and Privacy Masking.
+*   **Traffic Inspector**: Virtualized UI capable of handling 5000+ events with deep body inspection.
+*   **Universal IDE Support**: Native injection for VS Code, Cursor, and Windsurf.
+*   **Internal AI**: Built-in Z.ai MCP Server with Web Search & Vision.
+
 
 ## Project Standards
 

@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"net/http"
+
+	"github.com/salacoste/siberia/siberia/proxy/privacy"
 )
 
 const (
@@ -14,7 +16,8 @@ const (
 func SetAttribution(w http.ResponseWriter, provider, model, account string) {
 	w.Header().Set(HeaderProvider, provider)
 	w.Header().Set(HeaderModel, model)
+	w.Header().Set(HeaderModel, model)
 	if account != "" {
-		w.Header().Set(HeaderAccount, account)
+		w.Header().Set(HeaderAccount, privacy.MaskEmail(account))
 	}
 }

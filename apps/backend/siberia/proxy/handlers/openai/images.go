@@ -45,13 +45,7 @@ func (h *Handler) ImageGenerations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Attribution & Response
-	maskedIdentity := "unknown"
-	if len(identity) > 3 {
-		maskedIdentity = identity[:3] + "***"
-	} else if identity != "" {
-		maskedIdentity = "***"
-	}
-	middleware.SetAttribution(w, "openai-image", "dall-e-3", maskedIdentity)
+	middleware.SetAttribution(w, "openai-image", "dall-e-3", identity)
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(imgResp); err != nil {
